@@ -7,8 +7,8 @@
 # Size of source mod 2**32: 2198 bytes
 import pandas as pd
 
-def prepare_rs_data(outputdirname):
-    resting_state_data = pd.read_csv(outputdirname + "/genz_rs_power_alln_svdfix.csv")
+def prepare_rsMEG_data(workingdir, filename):
+    resting_state_data = pd.read_csv(workingdir + '/' + filename)
     resting_state_data.rename(columns={"id": "subject"}, inplace=True)
     rsd_v1 = resting_state_data.filter(regex="subject|t1_").copy()
     rsd_v2 = resting_state_data.filter(regex="subject|t2_").copy()
@@ -35,5 +35,4 @@ def prepare_rs_data(outputdirname):
     rsd_v1.insert(3, "gender", pd.Series(gender_v1))
     gender_v2 = [2 if x % 2 == 0 else 1 for x in rsd_v2.subject]
     rsd_v2.insert(3, "gender", pd.Series(gender_v2))
-    return (
-     rsd_v1, rsd_v2)
+    return (rsd_v1, rsd_v2)

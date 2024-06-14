@@ -6,8 +6,8 @@
 
 import pandas as pd
 from make_time1_normative_model import make_time1_normative_model
-from apply_normative_model_time2 import apply_normative_model_time2
-from plot_z_scores import plot_and_compute_zcores_by_gender
+# from apply_normative_model_time2 import apply_normative_model_time2
+# from plot_z_scores import plot_and_compute_zcores_by_gender
 
 import time
 
@@ -20,34 +20,35 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # validations (test) sets. If this is set to 0, the entire training set is used
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
-run_make_norm_model = 0
+run_make_norm_model = 1
 run_apply_norm_model = 0
 
+ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'
-
+MEG_resting_state_filename = 'genz_rs_power_alln_svdfix.csv'
 Z_time1 = {}
 Z_time2 = {}
 
 if run_make_norm_model:
 
         Z_time1 = make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                               perform_train_test_split_precovid, working_dir)
+                               perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir)
 
         Z_time1.drop(columns=['subject_id_test'], inplace=True)
 
-if run_apply_norm_model:
-
-        Z_time2 = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir)
-
-
-if run_apply_norm_model:
-    Z_time2 = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                               .format(working_dir, struct_var))
+# if run_apply_norm_model:
+#
+#         Z_time2 = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+#                                 working_dir)
 
 
-    Z_time2.to_csv(f'{working_dir}/predict_files/Z_time2.csv', index=False)
-
-    plot_and_compute_zcores_by_gender(struct_var, Z_time2)
+# if run_apply_norm_model:
+#     Z_time2 = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
+#                                .format(working_dir, struct_var))
+#
+#
+#     Z_time2.to_csv(f'{working_dir}/predict_files/Z_time2.csv', index=False)
+#
+#     plot_and_compute_zcores_by_gender(struct_var, Z_time2)
 
 mystop=1
