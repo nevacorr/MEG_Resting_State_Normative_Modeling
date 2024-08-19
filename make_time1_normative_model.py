@@ -13,12 +13,13 @@ from helper_functions_MEG import write_ages_to_file
 from prepare_rsMEG_data import prepare_rsMEG_data
 
 def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                               perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir):
+                               perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir,
+                               subjects_to_exclude):
 
     bands = ['theta', 'alpha', 'beta', 'gamma']
 
     # load all rs MEG data
-    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename)
+    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude)
 
      # make directories to store files
     for band in bands:

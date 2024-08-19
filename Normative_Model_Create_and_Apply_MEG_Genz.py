@@ -12,8 +12,8 @@ from make_time1_normative_model import make_time1_normative_model
 import time
 
 struct_var = 'meg'
-show_plots = 0          #set to 1 to show training and test data ymvs yhat and spline fit plots.
-show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
+show_plots = 1          #set to 1 to show training and test data ymvs yhat and spline fit plots.
+show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
 perform_train_test_split_precovid = 0  # flag indicating whether to split training set (pre-covid data) into train and
@@ -22,6 +22,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
 run_make_norm_model = 1
 run_apply_norm_model = 0
+subjects_to_exclude = [525]
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'
@@ -32,7 +33,8 @@ Z_time2 = {}
 if run_make_norm_model:
 
         Z_time1 = make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                               perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir)
+                               perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
+                               subjects_to_exclude)
 
         Z_time1.drop(columns=['subject_id_test'], inplace=True)
 

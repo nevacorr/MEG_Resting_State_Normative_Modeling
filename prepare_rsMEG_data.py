@@ -7,16 +7,16 @@
 # Size of source mod 2**32: 2198 bytes
 import pandas as pd
 
-def prepare_rsMEG_data(workingdir, filename):
+def prepare_rsMEG_data(workingdir, filename, subjects_to_exclude):
     resting_state_data = pd.read_csv(workingdir + '/' + filename)
     resting_state_data.rename(columns={"id": "subject"}, inplace=True)
+    resting_state_data = resting_state_data[~resting_state_data['subject'].isin(subjects_to_exclude)]
     rsd_v1 = resting_state_data.filter(regex="subject|t1_").copy()
     rsd_v2 = resting_state_data.filter(regex="subject|t2_").copy()
     rsd_v1.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
     rsd_v2.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
-    rsd_v1.drop((rsd_v1[rsd_v1["subject"] == 532].index), inplace=True)
-    MPF_behav_sm = pd.read_csv("/home/toddr/neva/PycharmProjects/AdolescentBehavioral/MPF_Behav_SocialM_v1and2.csv")
-    agedays_df = MPF_behav_sm[["subject", "visit", "agedays"]].copy()
+    demographics = pd.read_csv("/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick/Adol_CortThick_data.csv")
+    agedays_df = demographics[["subject", "gender", "visit", "agedays"]].copy()
     agedays_df.dropna(inplace=True, ignore_index=True)
     agedays_df["agedays"] = agedays_df["agedays"].astype(int)
     rsd_v1.rename(columns={"t1_age": "agegrp"}, inplace=True)
