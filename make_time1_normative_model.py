@@ -19,7 +19,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     bands = ['theta', 'alpha', 'beta', 'gamma']
 
     # load all rs MEG data
-    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude)
+    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude, ct_data_dir)
 
      # make directories to store files
     for band in bands:
