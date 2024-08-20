@@ -218,6 +218,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             Z_score_test_matrix[roi] = Z_te
 
             # save validation z scores to file
-            Z_score_test_matrix.to_csv('{}/data/{}/Z_scores_by_region_validation_set.txt'.format(working_dir, band), index=False)
+            Z_score_test_matrix.to_csv('{}/data/{}/Z_scores_by_region_validation_set.txt'.format(working_dir, band),
+                                       index=False)
 
         return Z_score_test_matrix
