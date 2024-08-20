@@ -21,7 +21,12 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude, ct_data_dir)
 
-     # make directories to store files
+    # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
+    rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
+    rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
+
+
+     # make directories to store files in
     for band in bands:
         makenewdir('{}/data/'.format(working_dir))
         makenewdir('{}/data/{}'.format(working_dir, band))
@@ -39,10 +44,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     ########
     # Use same train test subgroups as was used for cortical thickness analysis
     ########
-    # save_test_set_to_file_no_long(struct_var, 9)
-    # save_test_set_to_file_no_long(struct_var, 11)
-    # save_test_set_to_file_no_long(struct_var, 13)
-    # The resulting saved file is named visit1_subjects_excluded_from_normative_model_test_set_{struct_var}_9_11_13.txt
 
     # read in file of subjects in test set at ages 9, 11 and 13
     fname = '{}/visit1_subjects_excluded_from_normative_model_test_set_{}_9_11_13.txt'.format(ct_data_dir, 'cortthick')
@@ -51,14 +52,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # exclude subjects from the training set who are in test set
     rsd_v1 = rsd_v1[~rsd_v1['subject'].isin(subjects_test[0])]
     rsd_v1.reset_index(inplace=True, drop=True)
-
-    # write subject numbers for training set to file
-    # subjects_training = rsd_v1['subject'].tolist()
-    # fname = '{}/visit1_subjects_used_to_create_normative_model_train_set_{}.txt'.format(working_dir, struct_var)
-    # file1 = open(fname, "w")
-    # for subj in subjects_training:
-    #     file1.write(str(subj) + "\n")
-    # file1.close()
 
     # plot number of subjects of each gender by age who are included in training data set
     if show_nsubject_plots:
@@ -108,45 +101,45 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             subjects_train = rsd_v1.loc[s_index_train, 'subject'].values
             subjects_test = rsd_v1.loc[s_index_test, 'subject'].values
 
-            # drop the agegrp column from the train and validation data sets because we want to use agedays as a predictor
-            X_train.drop(columns=['agegrp'], inplace=True)
-            X_test.drop(columns=['agegrp'], inplace=True)
+        # drop the agegrp column from the train and validation data sets because we want to use agedays as a predictor
+        X_train.drop(columns=['agegrp'], inplace=True)
+        X_test.drop(columns=['agegrp'], inplace=True)
 
-            # change the indices in the train and validation data sets because nan values were dropped above
-            X_train.reset_index(drop=True, inplace=True)
-            X_test.reset_index(drop=True, inplace=True)
-            y_train.reset_index(drop=True, inplace=True)
-            y_test.reset_index(drop=True, inplace=True)
+        # change the indices in the train and validation data sets because nan values were dropped above
+        X_train.reset_index(drop=True, inplace=True)
+        X_test.reset_index(drop=True, inplace=True)
+        y_train.reset_index(drop=True, inplace=True)
+        y_test.reset_index(drop=True, inplace=True)
 
-            # Remove the prefix 't1_' from column names
-            roi_ids = y_train.columns.str.replace(fr'^{band}_', '', regex=True).tolist()
+        # Get region names from training set feature names
+        roi_ids = y_train.columns.str.replace(fr'^{band}_', '', regex=True).tolist()
 
-            ##########
-            # Set up output directories. Save data for each brain region to its own text file, organized in separate directories,
-            # because for each response variable Y (brain region) we fit a separate normative mode
-            ##########
-            for c in y_train.columns:
-                y_train[c].to_csv(f'{working_dir}/resp_tr_' + c + '.txt', header=False, index=False)
-                X_train.to_csv(f'{working_dir}/cov_tr.txt', sep='\t', header=False, index=False)
-                y_train.to_csv(f'{working_dir}/resp_tr.txt', sep='\t', header=False, index=False)
-            for c in y_test.columns:
-                y_test[c].to_csv(f'{working_dir}/resp_te_' + c + '.txt', header=False, index=False)
-                X_test.to_csv(f'{working_dir}/cov_te.txt', sep='\t', header=False, index=False)
-                y_test.to_csv(f'{working_dir}/resp_te.txt', sep='\t', header=False, index=False)
+        ##########
+        # Set up output directories. Save data for each brain region to its own text file, organized in separate directories,
+        # because for each response variable Y (brain region) we fit a separate normative mode
+        ##########
+        for c in y_train.columns:
+            y_train[c].to_csv(f'{working_dir}/resp_tr_' + c + '.txt', header=False, index=False)
+            X_train.to_csv(f'{working_dir}/cov_tr.txt', sep='\t', header=False, index=False)
+            y_train.to_csv(f'{working_dir}/resp_tr.txt', sep='\t', header=False, index=False)
+        for c in y_test.columns:
+            y_test[c].to_csv(f'{working_dir}/resp_te_' + c + '.txt', header=False, index=False)
+            X_test.to_csv(f'{working_dir}/cov_te.txt', sep='\t', header=False, index=False)
+            y_test.to_csv(f'{working_dir}/resp_te.txt', sep='\t', header=False, index=False)
 
-            for i in roi_ids:
-                roidirname = '{}/data/{}/ROI_models/{}'.format(working_dir, band, i)
-                makenewdir(roidirname)
-                resp_tr_filename = "{}/resp_tr_{}.txt".format(working_dir, i)
-                resp_tr_filepath = roidirname + '/resp_tr.txt'
-                shutil.copyfile(resp_tr_filename, resp_tr_filepath)
-                resp_te_filename = "{}/resp_te_{}.txt".format(working_dir, i)
-                resp_te_filepath = roidirname + '/resp_te.txt'
-                shutil.copyfile(resp_te_filename, resp_te_filepath)
-                cov_tr_filepath = roidirname + '/cov_tr.txt'
-                shutil.copyfile("{}/cov_tr.txt".format(working_dir), cov_tr_filepath)
-                cov_te_filepath = roidirname + '/cov_te.txt'
-                shutil.copyfile("{}/cov_te.txt".format(working_dir), cov_te_filepath)
+        for i in roi_ids:
+            roidirname = '{}/data/{}/ROI_models/{}'.format(working_dir, band, i)
+            makenewdir(roidirname)
+            resp_tr_filename = "{}/resp_tr_{}_{}.txt".format(working_dir, band, i)
+            resp_tr_filepath = roidirname + '/resp_tr.txt'
+            shutil.copyfile(resp_tr_filename, resp_tr_filepath)
+            resp_te_filename = "{}/resp_te_{}_{}.txt".format(working_dir, band, i)
+            resp_te_filepath = roidirname + '/resp_te.txt'
+            shutil.copyfile(resp_te_filename, resp_te_filepath)
+            cov_tr_filepath = roidirname + '/cov_tr.txt'
+            shutil.copyfile("{}/cov_tr.txt".format(working_dir), cov_tr_filepath)
+            cov_te_filepath = roidirname + '/cov_te.txt'
+            shutil.copyfile("{}/cov_te.txt".format(working_dir), cov_te_filepath)
 
         movefiles("{}/resp_*.txt".format(working_dir), "{}/data/{}/response_files/".format(working_dir, band))
         movefiles("{}/cov_t*.txt".format(working_dir), "{}/data/{}/covariate_files/".format(working_dir, band))
@@ -161,7 +154,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
         # Create pandas dataframes with header names to save evaluation metrics
         blr_metrics = pd.DataFrame(columns=['ROI', 'MSLL', 'EV', 'SMSE', 'RMSE', 'Rho'])
         blr_site_metrics = pd.DataFrame(
-            columns=['ROI', 'y_mean', 'y_var', 'yhat_mean', 'yhat_var', 'MSLL', 'EV', 'SMSE', 'RMSE', 'Rho'])
+        columns=['ROI', 'y_mean', 'y_var', 'yhat_mean', 'yhat_var', 'MSLL', 'EV', 'SMSE', 'RMSE', 'Rho'])
 
         # create dataframe with subject numbers to put the Z scores in. Here 'test' refers to the validation set
         subjects_test = subjects_test.reshape(-1, 1)
@@ -205,29 +198,27 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             Rho_te = metrics_te['Rho']
             EV_te = metrics_te['EXPV']
 
-            if show_plots:
-                # plot y versus y hat for validation data
-                plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Validation Data', struct_var, roi,
-                                                       Rho_te, EV_te)
+            # if show_plots:
+            #     # plot y versus y hat for validation data
+            #     plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Validation Data', struct_var, roi,
+            #                                            Rho_te, EV_te)
 
             # create dummy design matrices for visualizing model
-            dummy_cov_file_path = \
-                (create_dummy_design_matrix(band, agemin, agemax, cov_file_tr, spline_order, spline_knots,
-                                                       working_dir))
+            dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix(band, agemin, agemax,
+                                                                cov_file_tr, spline_order, spline_knots, working_dir)
 
             # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
-            plot_data_with_spline('Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
-                                  model_dir, roi, show_plots, working_dir)
+            plot_data_with_spline('Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path_female,
+                                  dummy_cov_file_path_male, model_dir, roi, show_plots, working_dir)
 
             # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
-            plot_data_with_spline('Validation Data', struct_var, cov_file_te, resp_file_te, dummy_cov_file_path,
-                                  model_dir, roi, show_plots, working_dir)
+            plot_data_with_spline('Validation Data', band, cov_file_te, resp_file_te, dummy_cov_file_path_female,
+                                  dummy_cov_file_path_male, model_dir, roi, show_plots, working_dir)
 
             # store z score for ROI validation set
             Z_score_test_matrix[roi] = Z_te
 
-        # save validation z scores to file
-        Z_score_test_matrix.to_csv('{}/data/{}/Z_scores_by_region_validation_set.txt'.format(working_dir, band), index=False)
-
+            # save validation z scores to file
+            Z_score_test_matrix.to_csv('{}/data/{}/Z_scores_by_region_validation_set.txt'.format(working_dir, band), index=False)
 
         return Z_score_test_matrix

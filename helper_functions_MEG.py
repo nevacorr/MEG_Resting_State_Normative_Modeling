@@ -35,7 +35,7 @@ def plot_num_subjs(df, title, struct_var, timept, path):
       fontsize=10)
     g.ax.set(yticks=(np.arange(0, 20, 2)))
     plt.show(block=False)
-    plt.savefig("{}/data/{}/plots/NumSubjects_{}".format(path, struct_var, timept))
+    plt.savefig("{}/data/{}_NumSubjects_{}".format(path, struct_var, timept))
 
 
 def makenewdir(path):
@@ -56,114 +56,144 @@ def movefiles(pattern, folder):
 def create_design_matrix(datatype, agemin, agemax, spline_order, spline_knots, roi_ids, data_dir):
     B = create_bspline_basis(agemin, agemax, p=spline_order, nknots=spline_knots)
     for roi in roi_ids:
-        print("Creating basis expansion for ROI:", roi)
+        print('Creating basis expansion for ROI:', roi)
         roi_dir = os.path.join(data_dir, roi)
         os.chdir(roi_dir)
-        makenewdir(f"{roi_dir}/blr")
-        if datatype == "train":
-            X = np.loadtxt(f"{roi_dir}/cov_tr.txt")
-        else:
-            if datatype == "test":
-                X = np.loadtxt(f"{roi_dir}/cov_te.txt")
-            else:
-                X = np.concatenate((X, np.ones((X.shape[0], 1))), axis=1)
-                if datatype == "train":
-                    np.savetxt(f"{roi_dir}/cov_int_tr.txt", X)
-                else:
-                    if datatype == "test":
-                        np.savetxt(f"{roi_dir}/cov_int_te.txt", X)
-        Phi = np.array([B(i) for i in X[(None[:None], 0)]])
+        # create output dir
+        os.makedirs(os.path.join(roi_dir, 'blr'), exist_ok=True)
+
+        # load train & test covariate data matrices
+        if datatype == 'train':
+            X = np.loadtxt(os.path.join(roi_dir, 'cov_tr.txt'))
+        elif datatype == 'test':
+            X = np.loadtxt(os.path.join(roi_dir, 'cov_te.txt'))
+
+        # add intercept column
+        X = np.concatenate((X, np.ones((X.shape[0], 1))), axis=1)
+
+        if datatype == 'train':
+            np.savetxt(os.path.join(roi_dir, 'cov_int_tr.txt'), X)
+        elif datatype == 'test':
+            np.savetxt(os.path.join(roi_dir, 'cov_int_te.txt'), X)
+
+        # create Bspline basis set
+        # This creates a numpy array called Phi by applying function B to each element of the first column of X_tr
+        Phi = np.array([B(i) for i in X[:, 0]])
         X = np.concatenate((X, Phi), axis=1)
-        if datatype == "train":
-            np.savetxt(f"{roi_dir}/cov_bspline_tr.txt", X)
-        elif datatype == "test":
-            np.savetxt(f"{roi_dir}/cov_bspline_te.txt", X)
-
-
+        if datatype == 'train':
+            np.savetxt(os.path.join(roi_dir, 'cov_bspline_tr.txt'), X)
+        elif datatype == 'test':
+            np.savetxt(os.path.join(roi_dir, 'cov_bspline_te.txt'), X)
 def create_dummy_design_matrix(struct_var, agemin, agemax, cov_file, spline_order, spline_knots, outputdir):
+    # load predictor variables for region
     X = np.loadtxt(cov_file)
+
+    # make dummy test data covariate file starting with a column for age
     dummy_cov = np.linspace(agemin, agemax, num=1000)
     ones = np.ones((dummy_cov.shape[0], 1))
-    dummy_cov_female = np.concatenate((dummy_cov.reshape(-1, 1), ones * 2), axis=1)
+
+    # add a column for gender for male and female data
+    dummy_cov_female = np.concatenate((dummy_cov.reshape(-1, 1), ones * 0), axis=1)
     dummy_cov_male = np.concatenate((dummy_cov.reshape(-1, 1), ones), axis=1)
+
+    #add a column for intercept
     dummy_cov_female = np.concatenate((dummy_cov_female, ones), axis=1)
     dummy_cov_male = np.concatenate((dummy_cov_male, ones), axis=1)
+
+    # create spline features and add them to male and female predictor dataframes
     BAll = create_bspline_basis(agemin, agemax, p=spline_order, nknots=spline_knots)
-    Phidummy_f = np.array([BAll(i) for i in dummy_cov_female[(None[:None], 0)]])
-    Phidummy_m = np.array([BAll(i) for i in dummy_cov_male[(None[:None], 0)]])
+    Phidummy_f = np.array([BAll(i) for i in dummy_cov_female[:, 0]])
+    Phidummy_m = np.array([BAll(i) for i in dummy_cov_male[:, 0]])
     dummy_cov_female = np.concatenate((dummy_cov_female, Phidummy_f), axis=1)
     dummy_cov_male = np.concatenate((dummy_cov_male, Phidummy_m), axis=1)
-    dummy_cov_file_path_female = os.path.join(outputdir, "cov_file_dummy_female.txt")
+
+    # write these new created predictor variables with spline and response variable to file
+    dummy_cov_file_path_female = os.path.join(outputdir, 'cov_file_dummy_female.txt')
     np.savetxt(dummy_cov_file_path_female, dummy_cov_female)
-    dummy_cov_file_path_male = os.path.join(outputdir, "cov_file_dummy_male.txt")
+    dummy_cov_file_path_male = os.path.join(outputdir, 'cov_file_dummy_male.txt')
     np.savetxt(dummy_cov_file_path_male, dummy_cov_male)
-    return (dummy_cov_file_path_female, dummy_cov_file_path_male)
+    return dummy_cov_file_path_female, dummy_cov_file_path_male
 
+def plot_data_with_spline(datastr, struct_var, cov_file, resp_file, dummy_cov_file_path_female,
+                          dummy_cov_file_path_male, model_dir, roi, showplots, working_dir):
+    output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
 
-def plot_data_with_spline(datastr, struct_var, cov_file, resp_file, dummy_cov_file_path_female, dummy_cov_file_path_male, model_dir, roi, showplots, outputdir):
-    output_f = predict(dummy_cov_file_path_female, respfile=None, alg="blr", model_path=model_dir)
-    output_m = predict(dummy_cov_file_path_male, respfile=None, alg="blr", model_path=model_dir)
-    yhat_predict_dummy_m = output_m[0]
-    yhat_predict_dummy_f = output_f[0]
+    output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
+
+    yhat_predict_dummy_m=output_m[0]
+    yhat_predict_dummy_f=output_f[0]
+
+    # load real data predictor variables for region
     X = np.loadtxt(cov_file)
+    # load real data response variables for region
     y = np.loadtxt(resp_file)
+
+    # create dataframes for plotting with seaborn facetgrid objects
     dummy_cov_female = np.loadtxt(dummy_cov_file_path_female)
     dummy_cov_male = np.loadtxt(dummy_cov_file_path_male)
-    df_origdata = pd.DataFrame(data=(X[(None[:None], 0[:2])]), columns=["Age in Days", "gender"])
+    df_origdata = pd.DataFrame(data=X[:, 0:2], columns=['Age in Days', 'gender'])
     df_origdata[struct_var] = y.tolist()
-    df_origdata["Age in Days"] = df_origdata["Age in Days"] / 365.25
-    df_estspline = pd.DataFrame(data=(dummy_cov_female[(None[:None], 0)].tolist() + dummy_cov_male[(None[:None], 0)].tolist()), columns=[
-     "Age in Days"])
-    df_estspline["Age in Days"] = df_estspline["Age in Days"] / 365.25
-    df_estspline["gender"] = [2] * 1000 + [1] * 1000
-    df_estspline["gender"] = df_estspline["gender"].astype("float")
-    tmp = np.array((yhat_predict_dummy_f.tolist() + yhat_predict_dummy_m.tolist()), dtype=float)
+    df_origdata['Age in Days'] = df_origdata['Age in Days'] / 365.25
+    df_estspline = pd.DataFrame(data=dummy_cov_female[:, 0].tolist() + dummy_cov_male[:, 0].tolist(),
+                                columns=['Age in Days'])
+    df_estspline['Age in Days'] = df_estspline['Age in Days'] / 365.25
+    df_estspline['gender'] = [0] * 1000 + [1] * 1000
+    df_estspline['gender'] = df_estspline['gender'].astype('float')
+    tmp = np.array(yhat_predict_dummy_f.tolist() + yhat_predict_dummy_m.tolist(), dtype=float)
     df_estspline[struct_var] = tmp
-    df_estspline = df_estspline.drop(index=(df_estspline.iloc[999].name)).reset_index(drop=True)
-    df_estspline = df_estspline.drop(index=(df_estspline.iloc[1998].name))
-    fig = plt.figure()
-    colors = {1:"blue",  2:"green"}
-    sns.lineplot(data=df_estspline, x="Age in Days", y=struct_var, hue="gender", palette=colors, legend=False)
-    sns.scatterplot(data=df_origdata, x="Age in Days", y=struct_var, hue="gender", palette=colors)
-    plt.legend(title="")
+    df_estspline = df_estspline.drop(index=df_estspline.iloc[999].name).reset_index(drop=True)
+    df_estspline = df_estspline.drop(index=df_estspline.iloc[1998].name)
+
+    fig=plt.figure()
+    colors = {1: 'blue', 0: 'crimson'}
+    sns.lineplot(data=df_estspline, x='Age in Days', y=struct_var, hue='gender', palette=colors, legend=False)
+    sns.scatterplot(data=df_origdata, x='Age in Days', y=struct_var, hue='gender', palette=colors)
+    plt.legend(title='')
     ax = plt.gca()
     fig.subplots_adjust(right=0.82)
     handles, labels = ax.get_legend_handles_labels()
-    labels = ["male", "female"]
-    ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1, 1))
-    plt.title(datastr + " " + struct_var + " vs. Age\n" + roi.replace(struct_var + "-", ""))
-    plt.xlabel("Age")
+    labels = ["female", "male"]
+    ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1))
+
+    plt.title(datastr +' ' + struct_var +  ' vs. Age\n' + roi.replace(struct_var+'-', ''))
+    plt.xlabel('Age')
     plt.ylabel(datastr + struct_var)
-    plt.savefig("{}/data/{}/plots/{}_vs_age_withsplinefit_{}_{}".format(outputdir, struct_var, struct_var, roi.replace(struct_var + "-", ""), datastr))
-    plt.close(fig)
+    if showplots == 1:
+        if datastr == 'Training Data':
+            plt.show(block=False)
+        else:
+            plt.show()
+    else:
+        plt.savefig('{}/data/{}/plots/{}_vs_age_withsplinefit_{}_{}'
+                .format(working_dir, struct_var, struct_var, roi.replace(struct_var+'-', ''), datastr))
+        plt.close(fig)
 
-
-def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, struct_var, roi, Rho, EV, gendercol, outputdir):
+def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, struct_var, roi, Rho, EV):
     cov_data = np.loadtxt(cov_file)
-    gender = cov_data[(None[:None], gendercol)].reshape(-1, 1)
-    y = np.loadtxt(resp_file).reshape(-1, 1)
+    gender = cov_data[:,1].reshape(-1,1)
+    y = np.loadtxt(resp_file).reshape(-1,1)
     dfp = pd.DataFrame()
-    gender = gender.flatten()
-    y = y.flatten()
-    yht = yhat.flatten()
-    dfp["gender"] = gender
-    dfp["y"] = y
-    dfp["yhat"] = yhat
+    gender=gender.flatten()
+    y=y.flatten()
+    yht=yhat.flatten()
+    dfp['gender'] = gender
+    dfp['y'] = y
+    dfp['yhat'] = yhat
     print(dfp.dtypes)
     fig = plt.figure()
-    colors = {1:"blue",  2:"green"}
-    sns.scatterplot(data=dfp, x="y", y="yhat", hue="gender", palette=colors)
+    colors = {1: 'blue', 0: 'crimson'}
+    sns.scatterplot(data=dfp, x='y', y='yhat', hue='gender', palette=colors)
     ax = plt.gca()
     fig.subplots_adjust(right=0.82)
     handles, labels = ax.get_legend_handles_labels()
-    labels = ["male", "female"]
-    ax.legend(handles, labels, loc="upper left", bbox_to_anchor=(1, 1))
-    plt.title(typestring + " " + struct_var + " vs. estimate\n" + roi + " EV=" + "{:.4}".format(str(EV.item())) + " Rho=" + "{:.4}".format(str(Rho.item())))
-    plt.xlabel(typestring + " " + struct_var)
-    plt.ylabel(struct_var + " estimate on " + typestring)
-    plt.plot([min(y), max(y)], [min(y), max(y)], color="red")
-    plt.savefig("{}/data/{}/plots/{}_{}_vs_estimate_{}".format(outputdir, struct_var, struct_var, typestring, roi.replace(struct_var + "-", "")))
-    plt.close(fig)
+    labels = ["female", "male"]
+    ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1))
+    plt.title(typestring + ' ' + struct_var + ' vs. estimate\n'
+              + roi +' EV=' + '{:.4}'.format(str(EV.item())) + ' Rho=' + '{:.4}'.format(str(Rho.item())))
+    plt.xlabel(typestring + ' ' + struct_var)
+    plt.ylabel(struct_var + ' estimate on ' + typestring)
+    plt.plot([min(y), max(y)], [min(y), max(y)], color='red')  # plots line y = x
+    plt.show(block=False)
 
 
 def barplot_performance_values(struct_var, metric, df, spline_order, spline_knots, outputdir):
@@ -192,23 +222,31 @@ def read_ages_from_file(struct_var, outputdir):
 
 
 def fit_regression_model_dummy_data(model_dir, dummy_cov_file_path_female, dummy_cov_file_path_male):
+    # create dummy data to find equation for linear regression fit between age and structvar
     dummy_predictors_f = pd.read_csv(dummy_cov_file_path_female, delim_whitespace=True, header=None)
     dummy_predictors_m = pd.read_csv(dummy_cov_file_path_male, delim_whitespace=True, header=None)
-    dummy_ages_f = dummy_predictors_f.iloc[(None[:None], 0)]
-    dummy_ages_m = dummy_predictors_m.iloc[(None[:None], 0)]
-    output_f = predict(dummy_cov_file_path_female, respfile=None, alg="blr", model_path=model_dir)
-    output_m = predict(dummy_cov_file_path_male, respfile=None, alg="blr", model_path=model_dir)
+    dummy_ages_f = dummy_predictors_f.iloc[:, 0]
+    dummy_ages_m = dummy_predictors_m.iloc[:, 0]
+
+    # calculate predicted values for dummy covariates for male and female
+    output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
+    output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
+
     yhat_predict_dummy_f = output_f[0]
     yhat_predict_dummy_m = output_m[0]
+
+    # remove last element of age and output arrays
     last_index = len(yhat_predict_dummy_f) - 1
     yhat_predict_dummy_f = np.delete(yhat_predict_dummy_f, -1)
     yhat_predict_dummy_m = np.delete(yhat_predict_dummy_m, -1)
     dummy_ages_f = np.delete(dummy_ages_f.to_numpy(), -1)
     dummy_ages_m = np.delete(dummy_ages_m.to_numpy(), -1)
+
+    # find slope and intercept of lines
     slope_f, intercept_f, rvalue_f, pvalue_f, std_error_f = stats.linregress(dummy_ages_f, yhat_predict_dummy_f)
     slope_m, intercept_m, rvalue_m, pvalue_m, std_error_m = stats.linregress(dummy_ages_m, yhat_predict_dummy_m)
-    return (
-     slope_f, intercept_f, slope_m, intercept_m)
+
+    return slope_f, intercept_f, slope_m, intercept_m
 
 
 def read_text_list(filename):
