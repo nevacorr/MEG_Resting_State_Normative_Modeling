@@ -25,15 +25,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
-     # make directories to store files in
-    for band in bands:
-        makenewdir('{}/data/'.format(working_dir))
-        makenewdir('{}/data/{}'.format(working_dir, band))
-        makenewdir('{}/data/{}/plots'.format(working_dir, band))
-        makenewdir('{}/data/{}/ROI_models'.format(working_dir, band))
-        makenewdir('{}/data/{}/covariate_files'.format(working_dir, band))
-        makenewdir('{}/data/{}/response_files'.format(working_dir, band))
-
      # show bar plots with number of subjects per age group in pre-COVID data
     if show_nsubject_plots:
         plot_num_subjs(rsd_v1, f'Subjects by Age with Pre-COVID MEGrs Data\n'
@@ -65,14 +56,25 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     agemin =rsd_v1['agedays'].min()
     agemax =rsd_v1['agedays'].max()
 
+    # Write ages to file
     write_ages_to_file(agemin, agemax, struct_var, working_dir)
 
     # separate the brain features (response variables) and predictors (age) in to separate dataframes
     rs_covariates = rsd_v1[['agegrp', 'agedays', 'gender']]
     rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
 
+    # make directories to store files in
+    makenewdir('{}/data/'.format(working_dir))
+
     # loop through all power bands separately
     for band in bands:
+
+        # make directories to store band specific files in
+        makenewdir('{}/data/{}'.format(working_dir, band))
+        makenewdir('{}/data/{}/plots'.format(working_dir, band))
+        makenewdir('{}/data/{}/ROI_models'.format(working_dir, band))
+        makenewdir('{}/data/{}/covariate_files'.format(working_dir, band))
+        makenewdir('{}/data/{}/response_files'.format(working_dir, band))
 
         rscols_band = [item for item in rscols if band in item]
         rs_features = rsd_v1.loc[:, rscols_band]

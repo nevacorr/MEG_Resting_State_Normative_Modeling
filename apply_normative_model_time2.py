@@ -27,11 +27,15 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
+    ########
+    # Use same train test subgroups as was used for cortical thickness analysis
+    ########
+
     #extract subject numbers from visit 1 and find subjects in visit 2 that aren't in visit 1
-    subjects_visit1 = rsd_v1['subject']
     rows_in_v2_but_not_v1 = rsd_v2[~rsd_v2['subject'].isin(rsd_v1['subject'])].dropna()
     subjs_in_v2_not_v1 = rows_in_v2_but_not_v1['subject'].copy()
     subjs_in_v2_not_v1 = subjs_in_v2_not_v1.astype(int)
+
     #only keep subjects at 12, 14 and 16 years of age (subject numbers <400) because cannot model 18 and 20 year olds
     subjs_in_v2_not_v1 = subjs_in_v2_not_v1[subjs_in_v2_not_v1 < 400]
 
@@ -40,14 +44,6 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     subjects_to_include = pd.read_csv(fname, header=None)
     subjects_to_include = pd.concat([subjects_to_include, subjs_in_v2_not_v1])
     rsd_v2 = rsd_v2[rsd_v2['subject'].isin(subjects_to_include[0])]
-
-    #make file diretories for output
-    makenewdir('{}/predict_files/'.format(working_dir))
-    makenewdir('{}/predict_files/{}'.format(working_dir, struct_var))
-    makenewdir('{}/predict_files/{}/plots'.format(working_dir, struct_var))
-    makenewdir('{}/predict_files/{}/ROI_models'.format(working_dir, struct_var))
-    makenewdir('{}/predict_files/{}/covariate_files'.format(working_dir, struct_var))
-    makenewdir('{}/predict_files/{}/response_files'.format(working_dir, struct_var))
 
     # reset indices
     rsd_v2.reset_index(inplace=True)
@@ -69,8 +65,19 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     #make a matrix of response variables, one for each brain region
     rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
 
+    # make file diretories for output
+    makenewdir('{}/predict_files/'.format(working_dir))
+
     # loop through each power band separately
     for band in bands:
+
+        # make file diretories for band-specific output
+
+        makenewdir('{}/predict_files/{}'.format(working_dir, band))
+        makenewdir('{}/predict_files/{}/plots'.format(working_dir, band))
+        makenewdir('{}/predict_files/{}/ROI_models'.format(working_dir, band))
+        makenewdir('{}/predict_files/{}/covariate_files'.format(working_dir, band))
+        makenewdir('{}/predict_files/{}/response_files'.format(working_dir, band))
 
         rscols_band = [item for item in rscols if band in item]
         rs_features = rsd_v1.loc[:, rscols_band]
@@ -150,9 +157,8 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
 
             Z_score_test_matrix[roi] = Z
 
-        mystop=1
 
-    Z_score_test_matrix.to_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
+            Z_score_test_matrix.to_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
                                 .format(working_dir, band), index=False)
 
     plt.show()
