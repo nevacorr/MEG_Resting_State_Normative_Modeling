@@ -6,7 +6,7 @@
 
 import pandas as pd
 from make_time1_normative_model import make_time1_normative_model
-# from apply_normative_model_time2 import apply_normative_model_time2
+from apply_normative_model_time2 import apply_normative_model_time2
 # from plot_z_scores import plot_and_compute_zcores_by_gender
 
 import time
@@ -38,10 +38,10 @@ if run_make_norm_model:
 
         Z_time1.drop(columns=['subject_id_test'], inplace=True)
 
-# if run_apply_norm_model:
-#
-#         Z_time2 = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-#                                 working_dir)
+if run_apply_norm_model:
+
+        Z_time2 = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+                                working_dir)
 
 
 # if run_apply_norm_model:

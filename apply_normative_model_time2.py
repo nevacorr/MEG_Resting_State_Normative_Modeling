@@ -8,60 +8,38 @@
 import os
 import pandas as pd
 from matplotlib import pyplot as plt
-from Load_Genz_Data import load_genz_data
-from plot_num_subjs import plot_num_subjs
-from Utility_Functions import makenewdir, movefiles, create_dummy_design_matrix_one_gender
-from Utility_Functions import plot_data_with_spline_one_gender, create_design_matrix_one_gender, read_ages_from_file
+from prepare_rsMEG_data import prepare_rsMEG_data
+from helper_functions_MEG import plot_num_subjs
+from helper_functions_MEG import makenewdir, movefiles, create_dummy_design_matrix
+from helper_functions_MEG import plot_data_with_spline, create_design_matrix, read_ages_from_file
 import shutil
 from normative_edited import predict
 
-def apply_normative_model_time2(gender, orig_struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                orig_data_dir, working_dir):
+def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+                                working_dir, MEG_filename, ct_data_dir, subjects_to_exclude):
 
-    ######################## Apply Normative Model to Post-Covid Data ############################
+    bands = ['theta', 'alpha', 'beta', 'gamma']
 
-    # load all brain and behavior data for visit 2
-    visit = 2
-    brain_good, all_data, roi_ids = load_genz_data(orig_struct_var, visit, orig_data_dir)
+    # load all rs MEG data
+    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude, ct_data_dir)
 
-    #load brain and behavior data for visit 1
-    visit = 1
-    brain_v1, all_v1, roi_v1 = load_genz_data(orig_struct_var, visit, orig_data_dir)
+    # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
+    rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
+    rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
     #extract subject numbers from visit 1 and find subjects in visit 2 that aren't in visit 1
-    subjects_visit1 = all_v1['participant_id']
-    rows_in_v2_but_not_v1 = all_data[~all_data['participant_id'].isin(all_v1['participant_id'])].dropna()
-    subjs_in_v2_not_v1 = rows_in_v2_but_not_v1['participant_id'].copy()
+    subjects_visit1 = rsd_v1['subject']
+    rows_in_v2_but_not_v1 = rsd_v2[~rsd_v2['subject'].isin(rsd_v1['subject'])].dropna()
+    subjs_in_v2_not_v1 = rows_in_v2_but_not_v1['subject'].copy()
     subjs_in_v2_not_v1 = subjs_in_v2_not_v1.astype(int)
     #only keep subjects at 12, 14 and 16 years of age (subject numbers <400) because cannot model 18 and 20 year olds
     subjs_in_v2_not_v1 = subjs_in_v2_not_v1[subjs_in_v2_not_v1 < 400]
 
-    if gender == 'male':
-        # keep only data for males
-        all_data = all_data.loc[all_data['sex'] == 1]
-        struct_var = 'cortthick_male'
-    else:
-        # keep only data for females
-        all_data = all_data.loc[all_data['sex'] == 2]
-        struct_var = 'cortthick_female'
-
-    #remove sex column
-    all_data = all_data.drop(columns=['sex'])
-
     #only include subjects that were not in the training set
-    fname='{}/visit1_subjects_excluded_from_normative_model_test_set_{}_9_11_13.txt'.format(orig_data_dir, orig_struct_var)
+    fname='{}/visit1_subjects_excluded_from_normative_model_test_set_{}_9_11_13.txt'.format(ct_data_dir, 'cortthick')
     subjects_to_include = pd.read_csv(fname, header=None)
     subjects_to_include = pd.concat([subjects_to_include, subjs_in_v2_not_v1])
-    brain_good = brain_good[brain_good['participant_id'].isin(subjects_to_include[0])]
-    all_data = all_data[all_data['participant_id'].isin(subjects_to_include[0])]
-
-    #write subject numbers used in test set to file
-    subjects_test = all_data['participant_id'].tolist()
-    fname = '{}/visit2_all_subjects_used_in_test_set_{}_{}.txt'.format(working_dir, struct_var, gender)
-    file1 = open(fname, "w")
-    for subj in subjects_test:
-        file1.write(str(subj) + "\n")
-    file1.close()
+    rsd_v2 = rsd_v2[rsd_v2['subject'].isin(subjects_to_include[0])]
 
     #make file diretories for output
     makenewdir('{}/predict_files/'.format(working_dir))
@@ -72,25 +50,24 @@ def apply_normative_model_time2(gender, orig_struct_var, show_plots, show_nsubje
     makenewdir('{}/predict_files/{}/response_files'.format(working_dir, struct_var))
 
     # reset indices
-    brain_good.reset_index(inplace=True)
-    all_data.reset_index(inplace=True, drop=True)
-    #read agemin and agemax from file
-    agemin, agemax = read_ages_from_file(working_dir, struct_var)
+    rsd_v2.reset_index(inplace=True)
 
     #show number of subjects by gender and age
-    if gender == "female":
-        genstring = 'Female'
-    elif gender == "male":
-        genstring = 'Male'
     if show_nsubject_plots:
-        plot_num_subjs(all_data, gender, f'{genstring} Subjects with Post-COVID Data\nEvaluated by Model\n'
-                       +' (Total N=' + str(all_data.shape[0]) + ')', struct_var, 'post-covid_allsubj', working_dir)
+        plot_num_subjs(rsd_v2, f'Subjects by Age with Post-COVID MEGrs Data\nEvaluated by Model\n'
+                       +' (Total N=' + str(rsd_v2.shape[0]) + ')', struct_var, 'post-covid_allsubj', working_dir)
+
+    # Remove the prefix 't2_' from column names
+    rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
+
+    # read agemin and agemax from file
+    agemin, agemax = read_ages_from_file(working_dir, struct_var)
 
     #specify which columns of dataframe to use as covariates
-    X_test = all_data[['agedays']]
+    rs_covariates = rsd_v2[['agegrp', 'agedays', 'gender']]
 
     #make a matrix of response variables, one for each brain region
-    y_test = all_data.loc[:, roi_ids]
+    rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
 
     #specify paths
     training_dir = '{}/data/{}/ROI_models/'.format(working_dir, struct_var)
@@ -98,13 +75,25 @@ def apply_normative_model_time2(gender, orig_struct_var, show_plots, show_nsubje
     #  this path is where ROI_models folders are located
     predict_files_dir = '{}/predict_files/{}/ROI_models/'.format(working_dir, struct_var)
 
-    ##########
-    # Create output directories for each region and place covariate and response files for that region in  each directory
-    ##########
-    for c in y_test.columns:
-        y_test[c].to_csv(f'{working_dir}/resp_te_'+c+'.txt', header=False, index=False)
-        X_test.to_csv(f'{working_dir}/cov_te.txt', sep='\t', header=False, index=False)
-        y_test.to_csv(f'{working_dir}/resp_te.txt', sep='\t', header=False, index=False)
+    # loop through each power band separately
+    for band in bands:
+
+        rscols_band = [item for item in rscols if band in item]
+        rs_features = rsd_v1.loc[:, rscols_band]
+
+        X_test = rs_covariates.copy()
+        y_test = rs_features.copy()
+
+        # drop the agegrp column from the test data set because we want to use agedays as a predictor
+        X_test.drop(columns=['agegrp'], inplace=True)
+
+        ##########
+        # Create output directories for each region and place covariate and response files for that region in  each directory
+        ##########
+        for c in y_test.columns:
+            y_test[c].to_csv(f'{working_dir}/resp_te_'+c+'.txt', header=False, index=False)
+            X_test.to_csv(f'{working_dir}/cov_te.txt', sep='\t', header=False, index=False)
+            y_test.to_csv(f'{working_dir}/resp_te.txt', sep='\t', header=False, index=False)
 
     for i in roi_ids:
         roidirname = '{}/predict_files/{}/ROI_models/{}'.format(working_dir, struct_var, i)

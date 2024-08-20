@@ -25,7 +25,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
-
      # make directories to store files in
     for band in bands:
         makenewdir('{}/data/'.format(working_dir))
