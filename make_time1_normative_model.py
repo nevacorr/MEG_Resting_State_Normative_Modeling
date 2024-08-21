@@ -19,7 +19,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     bands = ['theta', 'alpha', 'beta', 'gamma']
 
     # load all rs MEG data
-    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude, ct_data_dir)
+    rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
 
     # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
@@ -223,4 +223,4 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             Z_score_test_matrix.to_csv('{}/data/{}/Z_scores_by_region_validation_set.txt'.format(working_dir, band),
                                        index=False)
 
-        return Z_score_test_matrix
+    return Z_score_test_matrix

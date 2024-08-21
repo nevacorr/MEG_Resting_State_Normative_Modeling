@@ -21,7 +21,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     bands = ['theta', 'alpha', 'beta', 'gamma']
 
     # load all rs MEG data
-    rsd_v1, rsd_v2 = prepare_rsMEG_data(working_dir, MEG_filename, subjects_to_exclude, ct_data_dir)
+    rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
 
     # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
@@ -57,7 +57,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
     # read agemin and agemax from file
-    agemin, agemax = read_ages_from_file(working_dir, struct_var)
+    agemin, agemax = read_ages_from_file(struct_var, working_dir)
 
     #specify which columns of dataframe to use as covariates
     rs_covariates = rsd_v2[['agegrp', 'agedays', 'gender']]
@@ -80,7 +80,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
         makenewdir('{}/predict_files/{}/response_files'.format(working_dir, band))
 
         rscols_band = [item for item in rscols if band in item]
-        rs_features = rsd_v1.loc[:, rscols_band]
+        rs_features = rsd_v2.loc[:, rscols_band]
 
         X_test = rs_covariates.copy()
         y_test = rs_features.copy()
@@ -163,5 +163,5 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
 
     plt.show()
 
-    return Z_score_test_matrix
+    return Z_score_test_matrix, roi_ids
 

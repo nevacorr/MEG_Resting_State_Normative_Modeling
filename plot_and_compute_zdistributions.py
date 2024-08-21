@@ -9,7 +9,7 @@ import numpy as np
 import seaborn as sns
 import scipy.stats as stats
 import math
-from Utility_Functions import write_list_to_file
+from helper_functions_MEG import write_list_to_file
 
 def one_plot(ax, ptitle, ptitleB, Z_male_region, Z_female_region, binedges, zlim, nokde):
     if nokde==1:
@@ -65,7 +65,7 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
                 hemi = 'Right hemisphere '
             elif region_string[1] == 'lh':
                 hemi = 'Left hemisphere '
-            region_for_title = region_string[2]
+            region_for_title = region_string[0]
             if region_for_title == 'bankssts':
                 region_for_title = 'banks of STS'
             elif region_for_title == 'frontalpole':
