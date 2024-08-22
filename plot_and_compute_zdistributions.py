@@ -48,9 +48,9 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
     sig_string_list = []
     bold_string_list = []
     if nokde == 1:
-        figstr = 'Z_scores_post_covid_by_gender_nokde'
+        figstr = f'Z_scores_post_covid_by_gender_nokde_{struct_var}'
     elif nokde == 0:
-        figstr = 'Z_scores_post_covid_by_gender_withkde'
+        figstr = f'Z_scores_post_covid_by_gender_withkde_{struct_var}'
 
     for i, r in enumerate(df['roi_ids']):
         zmean_f = np.mean(Z_female[r])
@@ -115,7 +115,7 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
             elif region_for_title == 'isthmuscingulate':
                 region_for_title = 'isthmus cingulate'
 
-        bold_string = f'{hemi}{region_for_title}\n'
+        bold_string = f'{hemi}{region_for_title} {struct_var}\n'
         not_bold_string = (f'Female mean = {zmean_f:.2}, $\\it{{p}}$ = {df.loc[i, "pfemale"]:.2e}\n '
                            f'Male mean = {zmean_m:.2}, $\\it{{p}}$ = {df.loc[i, "pmale"]:.2e}')
         bold_string_list.append(bold_string)
