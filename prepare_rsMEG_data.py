@@ -6,6 +6,7 @@
 # Compiled at: 2024-01-11 11:50:41
 # Size of source mod 2**32: 2198 bytes
 import pandas as pd
+import sys
 
 def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
 
@@ -25,6 +26,12 @@ def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
     # Drop rows with more than 10 missing values
     rsd_v1.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
     rsd_v2.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
+
+    # Check for nan values in data
+    nan_rows1 = rsd_v1.isna().sum().sum()
+    nan_rows2 = rsd_v2.isna().sum().sum()
+    if (nan_rows1 != 0) and (nan_rows2 != 0):
+        sys.exit('Error: Input data has nan values. Stopping program execution.')
 
     # Rename column in MEG dataframe that has age group
     rsd_v1.rename(columns={"t1_age": "agegrp"}, inplace=True)
