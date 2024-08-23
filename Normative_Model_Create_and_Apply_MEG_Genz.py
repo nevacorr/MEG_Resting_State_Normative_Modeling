@@ -18,13 +18,13 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # validations (test) sets. If this is set to 0, the entire training set is used
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
-run_make_norm_model = 0
+run_make_norm_model = 1
 run_apply_norm_model = 1
 subjects_to_exclude = [525, 532]
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'
-MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_alln_svdfix.csv'
+MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_vfix_alln.csv'
 Z_time1 = {}
 Z_time2 = {}
 
