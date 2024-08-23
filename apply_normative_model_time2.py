@@ -27,6 +27,14 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
+    # Divide all MEG numbers by 150
+    columns_to_exclude = ['subject', 'agegrp', 'gender', 'agedays']
+    columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
+    columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
+
+    rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
+    rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+
     ########
     # Use same train test subgroups as was used for cortical thickness analysis
     ########

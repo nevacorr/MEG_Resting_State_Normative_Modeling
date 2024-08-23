@@ -10,7 +10,7 @@ from apply_normative_model_time2 import apply_normative_model_time2
 from plot_and_compute_zdistributions import plot_and_compute_zcores_by_gender
 
 struct_var = 'meg'
-show_plots = 1          #set to 1 to show training and test data spline fit plots.
+show_plots = 0          #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
@@ -18,7 +18,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # validations (test) sets. If this is set to 0, the entire training set is used
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
-run_make_norm_model = 1
+run_make_norm_model = 0
 run_apply_norm_model = 1
 subjects_to_exclude = [525, 532]
 

@@ -26,7 +26,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
-    # Divide all MEG numbers by 100
+    # Divide all MEG numbers by 150
     columns_to_exclude = ['subject', 'agegrp', 'gender', 'agedays']
     columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
     columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
