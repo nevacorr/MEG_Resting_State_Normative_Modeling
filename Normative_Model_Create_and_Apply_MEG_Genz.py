@@ -20,7 +20,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
 run_make_norm_model = 1
 run_apply_norm_model = 1
-subjects_to_exclude = [525, 532]
+subjects_to_exclude = [525] #532 was an outlier on original data set but is no longer
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'
