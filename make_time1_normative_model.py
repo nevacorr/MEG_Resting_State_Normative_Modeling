@@ -11,6 +11,7 @@ from helper_functions_MEG import create_dummy_design_matrix
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
 from helper_functions_MEG import write_ages_to_file
 from prepare_rsMEG_data import prepare_rsMEG_data
+from sklearn.preprocessing import StandardScaler
 
 def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir,
@@ -24,6 +25,26 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
+
+    # Divide all MEG numbers by 100
+    columns_to_exclude = ['subject', 'agegrp', 'gender', 'agedays']
+    columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
+    columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
+
+    rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
+    rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+
+
+    # scaler1 = StandardScaler()
+    # # Apply the scaler to the specified columns
+    # scaler1.fit(rsd_v1[columns_to_modify1])
+    # rsd_v1[columns_to_modify1] = scaler1.transform(rsd_v1[columns_to_modify1])
+    # scaler2 = StandardScaler()
+    # scaler2.fit(rsd_v2[columns_to_modify2])
+    # rsd_v2[columns_to_modify2] = scaler2.transform(rsd_v2[columns_to_modify2])
+
+    # make directories to store files in
+    makenewdir('{}/data/'.format(working_dir))
 
      # show bar plots with number of subjects per age group in pre-COVID data
     if show_nsubject_plots:
@@ -63,8 +84,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rs_covariates = rsd_v1[['agegrp', 'agedays', 'gender']]
     rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
 
-    # make directories to store files in
-    makenewdir('{}/data/'.format(working_dir))
 
     # loop through all power bands separately
     for band in bands:

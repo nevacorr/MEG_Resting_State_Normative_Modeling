@@ -85,8 +85,6 @@ def create_design_matrix(datatype, agemin, agemax, spline_order, spline_knots, r
         elif datatype == 'test':
             np.savetxt(os.path.join(roi_dir, 'cov_bspline_te.txt'), X)
 def create_dummy_design_matrix(struct_var, agemin, agemax, cov_file, spline_order, spline_knots, outputdir):
-    # load predictor variables for region
-    X = np.loadtxt(cov_file)
 
     # make dummy test data covariate file starting with a column for age
     dummy_cov = np.linspace(agemin, agemax, num=1000)
@@ -221,32 +219,32 @@ def read_ages_from_file(struct_var, outputdir):
     return (agemin, agemax)
 
 
-def fit_regression_model_dummy_data(model_dir, dummy_cov_file_path_female, dummy_cov_file_path_male):
-    # create dummy data to find equation for linear regression fit between age and structvar
-    dummy_predictors_f = pd.read_csv(dummy_cov_file_path_female, delim_whitespace=True, header=None)
-    dummy_predictors_m = pd.read_csv(dummy_cov_file_path_male, delim_whitespace=True, header=None)
-    dummy_ages_f = dummy_predictors_f.iloc[:, 0]
-    dummy_ages_m = dummy_predictors_m.iloc[:, 0]
-
-    # calculate predicted values for dummy covariates for male and female
-    output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
-    output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
-
-    yhat_predict_dummy_f = output_f[0]
-    yhat_predict_dummy_m = output_m[0]
-
-    # remove last element of age and output arrays
-    last_index = len(yhat_predict_dummy_f) - 1
-    yhat_predict_dummy_f = np.delete(yhat_predict_dummy_f, -1)
-    yhat_predict_dummy_m = np.delete(yhat_predict_dummy_m, -1)
-    dummy_ages_f = np.delete(dummy_ages_f.to_numpy(), -1)
-    dummy_ages_m = np.delete(dummy_ages_m.to_numpy(), -1)
-
-    # find slope and intercept of lines
-    slope_f, intercept_f, rvalue_f, pvalue_f, std_error_f = stats.linregress(dummy_ages_f, yhat_predict_dummy_f)
-    slope_m, intercept_m, rvalue_m, pvalue_m, std_error_m = stats.linregress(dummy_ages_m, yhat_predict_dummy_m)
-
-    return slope_f, intercept_f, slope_m, intercept_m
+# def fit_regression_model_dummy_data(model_dir, dummy_cov_file_path_female, dummy_cov_file_path_male):
+#     # create dummy data to find equation for linear regression fit between age and structvar
+#     dummy_predictors_f = pd.read_csv(dummy_cov_file_path_female, delim_whitespace=True, header=None)
+#     dummy_predictors_m = pd.read_csv(dummy_cov_file_path_male, delim_whitespace=True, header=None)
+#     dummy_ages_f = dummy_predictors_f.iloc[:, 0]
+#     dummy_ages_m = dummy_predictors_m.iloc[:, 0]
+#
+#     # calculate predicted values for dummy covariates for male and female
+#     output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
+#     output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
+#
+#     yhat_predict_dummy_f = output_f[0]
+#     yhat_predict_dummy_m = output_m[0]
+#
+#     # remove last element of age and output arrays
+#     last_index = len(yhat_predict_dummy_f) - 1
+#     yhat_predict_dummy_f = np.delete(yhat_predict_dummy_f, -1)
+#     yhat_predict_dummy_m = np.delete(yhat_predict_dummy_m, -1)
+#     dummy_ages_f = np.delete(dummy_ages_f.to_numpy(), -1)
+#     dummy_ages_m = np.delete(dummy_ages_m.to_numpy(), -1)
+#
+#     # find slope and intercept of lines
+#     slope_f, intercept_f, rvalue_f, pvalue_f, std_error_f = stats.linregress(dummy_ages_f, yhat_predict_dummy_f)
+#     slope_m, intercept_m, rvalue_m, pvalue_m, std_error_m = stats.linregress(dummy_ages_m, yhat_predict_dummy_m)
+#
+#     return slope_f, intercept_f, slope_m, intercept_m
 
 
 def read_text_list(filename):
@@ -256,61 +254,61 @@ def read_text_list(filename):
     return mylist
 
 
-def plot_scatter_with_trendline_corthick_MEGrs_byreg(df, band, cortthick_cols, band_cols, cortthick_str_to_remove, band_str_to_remove, mycolor):
-    all_band_col_names = []
-    allslope = []
-    allintercept = []
-    allr = []
-    allp = []
-    for i, ct_col_name in enumerate(cortthick_cols):
-        cortthick_col_split = ct_col_name.split("-")
-        band_col_name = band + "_" + cortthick_col_split[2] + "-" + cortthick_col_split[1]
-        all_band_col_names.append(band_col_name)
-        slope, intercept, r, p, std_error = linregress(df.loc[(None[:None], band_col_name)], df.loc[(None[:None], ct_col_name)])
-        allslope.append(slope)
-        allintercept.append(intercept)
-        allr.append(r)
-        allp.append(p)
-        mysstop = 1
-    else:
-        output = multipletests(allp, alpha=0.05, method="fdr_bh")
-        correctedp = output[1]
-        rejectho = output[0]
-        rejectho_list = rejectho.tolist()
-        ct_cols_to_plot = [cortthick_cols[i] for i in range(len(cortthick_cols))]
-        ct_cols_to_plot_orig_ind = [i for i, x in enumerate(rejectho_list) if x]
-        p_to_plot = [correctedp[i] for i in ct_cols_to_plot_orig_ind]
-        r_to_plot = [allr[i] for i in ct_cols_to_plot_orig_ind]
-        slope_to_plot = [allslope[i] for i in ct_cols_to_plot_orig_ind]
-        intercept_to_plot = [allintercept[i] for i in ct_cols_to_plot_orig_ind]
-        for i, ct_col_name in enumerate(ct_cols_to_plot):
-            ct_col_split = ct_col_name.split("-")
-            band_col_name = band + "_" + ct_col_split[2] + "-" + ct_col_split[1]
-            plt.scatter((df.loc[(None[:None], band_col_name)]), (df.loc[(None[:None], ct_col_name)]), s=12, color=mycolor)
-            trendline = slope_to_plot[i] * df.loc[(None[:None], band_col_name)] + intercept_to_plot[i]
-            plt.plot((df.loc[(None[:None], band_col_name)]), trendline, color=mycolor, linewidth=1, label="trendline")
-            plt.xlabel("z {band} power", fontsize=8)
-            plt.ylabel("z cortthick", fontsize=8)
-            region = ct_col_name.replace(cortthick_str_to_remove, "")
-            plt.title(f"z corthick vs. z {band} power\n {region} \nr = : {r_to_plot[i]: .2f}, corrp = {p_to_plot[i]:.2f}", fontsize=8)
-            plt.tick_params(axis="x", labelsize=8)
-            plt.tick_params(axis="y", labelsize=8)
-            plt.show()
-            mystop = 1
+# def plot_scatter_with_trendline_corthick_MEGrs_byreg(df, band, cortthick_cols, band_cols, cortthick_str_to_remove, band_str_to_remove, mycolor):
+#     all_band_col_names = []
+#     allslope = []
+#     allintercept = []
+#     allr = []
+#     allp = []
+#     for i, ct_col_name in enumerate(cortthick_cols):
+#         cortthick_col_split = ct_col_name.split("-")
+#         band_col_name = band + "_" + cortthick_col_split[2] + "-" + cortthick_col_split[1]
+#         all_band_col_names.append(band_col_name)
+#         slope, intercept, r, p, std_error = linregress(df.loc[(None[:None], band_col_name)], df.loc[(None[:None], ct_col_name)])
+#         allslope.append(slope)
+#         allintercept.append(intercept)
+#         allr.append(r)
+#         allp.append(p)
+#         mysstop = 1
+#     else:
+#         output = multipletests(allp, alpha=0.05, method="fdr_bh")
+#         correctedp = output[1]
+#         rejectho = output[0]
+#         rejectho_list = rejectho.tolist()
+#         ct_cols_to_plot = [cortthick_cols[i] for i in range(len(cortthick_cols))]
+#         ct_cols_to_plot_orig_ind = [i for i, x in enumerate(rejectho_list) if x]
+#         p_to_plot = [correctedp[i] for i in ct_cols_to_plot_orig_ind]
+#         r_to_plot = [allr[i] for i in ct_cols_to_plot_orig_ind]
+#         slope_to_plot = [allslope[i] for i in ct_cols_to_plot_orig_ind]
+#         intercept_to_plot = [allintercept[i] for i in ct_cols_to_plot_orig_ind]
+#         for i, ct_col_name in enumerate(ct_cols_to_plot):
+#             ct_col_split = ct_col_name.split("-")
+#             band_col_name = band + "_" + ct_col_split[2] + "-" + ct_col_split[1]
+#             plt.scatter((df.loc[(None[:None], band_col_name)]), (df.loc[(None[:None], ct_col_name)]), s=12, color=mycolor)
+#             trendline = slope_to_plot[i] * df.loc[(None[:None], band_col_name)] + intercept_to_plot[i]
+#             plt.plot((df.loc[(None[:None], band_col_name)]), trendline, color=mycolor, linewidth=1, label="trendline")
+#             plt.xlabel("z {band} power", fontsize=8)
+#             plt.ylabel("z cortthick", fontsize=8)
+#             region = ct_col_name.replace(cortthick_str_to_remove, "")
+#             plt.title(f"z corthick vs. z {band} power\n {region} \nr = : {r_to_plot[i]: .2f}, corrp = {p_to_plot[i]:.2f}", fontsize=8)
+#             plt.tick_params(axis="x", labelsize=8)
+#             plt.tick_params(axis="y", labelsize=8)
+#             plt.show()
+#             mystop = 1
 
 
-def plot_scatter_with_trendline_one_col_against_all_MEGrs(df, strMEGcolsofinterest, cortthick_cols, num_cols, cortthick_str_to_remove, col_int_string, cortthick_str, mycolor):
-    fig, ax = plt.subplots(1, 1)
-    df.reset_index(inplace=True, drop=True)
-    new_df = df.iloc[(None[:None], 2[:None])].copy()
-    melted_df = new_df.melt().drop("variable", axis=1).rename({"value": "z-score"}, axis=1)
-    repeated_puberty = pd.concat(([df.iloc[(None[:None], 1)]] * len(cortthick_cols)), axis=0, ignore_index=True)
-    ax.scatter(repeated_puberty, melted_df, s=12, color=mycolor)
-    slope, intercept, r, p, std_err = linregress(repeated_puberty, melted_df["z-score"])
-    trendline = slope * repeated_puberty + intercept
-    ax.plot(repeated_puberty, trendline, color=mycolor, linewidth=1, label="trendline")
-    ax.set_xlabel(col_int_string)
-    ax.set_ylabel(cortthick_str)
-    ax.set_title(f"{cortthick_str} vs {strMEGcolsofinterest} z across all regions")
-    plt.show()
-    mystop = 1
+# def plot_scatter_with_trendline_one_col_against_all_MEGrs(df, strMEGcolsofinterest, cortthick_cols, num_cols, cortthick_str_to_remove, col_int_string, cortthick_str, mycolor):
+#     fig, ax = plt.subplots(1, 1)
+#     df.reset_index(inplace=True, drop=True)
+#     new_df = df.iloc[(None[:None], 2[:None])].copy()
+#     melted_df = new_df.melt().drop("variable", axis=1).rename({"value": "z-score"}, axis=1)
+#     repeated_puberty = pd.concat(([df.iloc[(None[:None], 1)]] * len(cortthick_cols)), axis=0, ignore_index=True)
+#     ax.scatter(repeated_puberty, melted_df, s=12, color=mycolor)
+#     slope, intercept, r, p, std_err = linregress(repeated_puberty, melted_df["z-score"])
+#     trendline = slope * repeated_puberty + intercept
+#     ax.plot(repeated_puberty, trendline, color=mycolor, linewidth=1, label="trendline")
+#     ax.set_xlabel(col_int_string)
+#     ax.set_ylabel(cortthick_str)
+#     ax.set_title(f"{cortthick_str} vs {strMEGcolsofinterest} z across all regions")
+#     plt.show()
+#     mystop = 1
