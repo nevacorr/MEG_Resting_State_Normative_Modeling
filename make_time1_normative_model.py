@@ -34,15 +34,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
     rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
 
-
-    # scaler1 = StandardScaler()
-    # # Apply the scaler to the specified columns
-    # scaler1.fit(rsd_v1[columns_to_modify1])
-    # rsd_v1[columns_to_modify1] = scaler1.transform(rsd_v1[columns_to_modify1])
-    # scaler2 = StandardScaler()
-    # scaler2.fit(rsd_v2[columns_to_modify2])
-    # rsd_v2[columns_to_modify2] = scaler2.transform(rsd_v2[columns_to_modify2])
-
     # make directories to store files in
     makenewdir('{}/data/'.format(working_dir))
 
@@ -83,7 +74,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # separate the brain features (response variables) and predictors (age) in to separate dataframes
     rs_covariates = rsd_v1[['agegrp', 'agedays', 'gender']]
     rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
-
 
     # loop through all power bands separately
     for band in bands:

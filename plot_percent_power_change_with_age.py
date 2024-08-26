@@ -1,3 +1,6 @@
+# This program loads the (pre-covid) normative model of MEG band power changes for all brain regions between 9 and 17 years of age
+# and returns and plots the percent change in power throughout the cerebral cortex.
+
 import os
 import sys
 import numpy as np
@@ -5,46 +8,87 @@ import argparse
 import pickle
 import matplotlib.pyplot as plt
 import pandas as pd
-import glob
-from sklearn.model_selection import KFold
-from pathlib import Path
+from helper_functions_MEG import create_dummy_design_matrix, read_ages_from_file
+import ggseg
+import random
 
+age_conversion_factor = 365.25
+working_dir = os.getcwd()
+bands = ['theta', 'alpha', 'beta', 'gamma']
+
+# Set some options
 plot_model = 0
+struct_var = 'meg'
+spline_order = 1
+spline_knots = 2
 
-model_path = ('/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
-                             'Modeling/data/alpha/ROI_models/cuneus-lh/Models/')
+for band in bands:
 
-cov_spline_data = pd.read_csv('/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
-                             'Modeling/data/alpha/ROI_models/cuneus-lh/cov_bspline_tr.txt', sep=' ', header=None)
+    model_dir_path = f'{working_dir}/data/{band}/ROI_models'
 
-# Read in covariate data for all subjects for this region as dataframe
-cov_spline_data_f = cov_spline_data[cov_spline_data[1] == 0].sort_values(by=0)
-cov_spline_data_m = cov_spline_data[cov_spline_data[1] == 1].sort_values(by=0)
+    # Get a list of all region names by listing directories in model folder
+    all_regions = [d for d in os.listdir(model_dir_path)
+                   if os.path.isdir(os.path.join(model_dir_path, d))]
+    all_regions.sort()
 
-# Remove last data point from female data set (model does not fit end point)
-numrows = cov_spline_data_f.shape[0]
-cov_spline_data_f = cov_spline_data_f.iloc[0:numrows - 1, :]
+    # Initialize dictionaries to store percent change values for males and females
+    change_dict_f = {}
+    change_dict_m = {}
 
-# Convert dataframes to numpy array
-cov_spline_data_f_array = cov_spline_data_f.to_numpy()
-cov_spline_data_m_array = cov_spline_data_m.to_numpy()
+    for region in all_regions:
 
-# Open model parameter file
-with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
-    data = pickle.load(file)
+        model_path = (f'/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
+                      f'Modeling/data/{band}/ROI_models/{region}/Models/')
 
-# Calculate predictions from model based on covariate data
-y_pred_f = np.dot(cov_spline_data_f_array, data.blr.m)
-y_pred_m = np.dot(cov_spline_data_m_array, data.blr.m)
+        # Read agemin and agemax from file
+        agemin, agemax = read_ages_from_file(struct_var, working_dir)
 
-if plot_model:
-    # plot model for this brain region
-    plt.plot(cov_spline_data_f_array[:,0], y_pred_f, 'crimson')
-    plt.plot(cov_spline_data_m_array[:,0], y_pred_m, 'b')
-    plt.show()
+        # Create dummy covariate matrices with bspline values and save to file
+        dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix(band, agemin, agemax,
+                                                                        None, spline_order, spline_knots, working_dir)
+        # Load dummy covariate matrices
+        dummy_cov_f = np.loadtxt(dummy_cov_file_path_female)
+        dummy_cov_m = np.loadtxt(dummy_cov_file_path_male)
 
-# calculate slope for this brain region
-slope_f = (y_pred_f[-3] - y_pred_f[2]) / (cov_spline_data_f_array[-3, 0] - cov_spline_data_f_array[2, 0])
+        # remove last row which has erroneous bspline values
+        dummy_cov_f = dummy_cov_f[:-1]
+        dummy_cov_m = dummy_cov_m[:-1]
+
+        # Open model parameter file
+        with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
+            data = pickle.load(file)
+
+        # Calculate predictions from model based on covariate data
+        y_pred_f = np.dot(dummy_cov_f, data.blr.m)
+        y_pred_m = np.dot(dummy_cov_m, data.blr.m)
+
+        # calculate percent change with age this brain region
+        pchange_f = (y_pred_f[-1] - y_pred_f[0]) / y_pred_f[0] * 100.00
+        pchange_m = (y_pred_m[-1] - y_pred_m[0]) / y_pred_m[0] * 100.00
+
+
+        region = region.replace('-lh', '_left')
+        region = region.replace('-rh', '_right')
+
+        change_dict_f[region] = pchange_f
+        change_dict_m[region] = pchange_m
+
+        if plot_model:
+            # plot model for this brain region
+            plt.plot(dummy_cov_f[:,0]/age_conversion_factor, y_pred_f, 'crimson')
+            plt.plot(dummy_cov_m[:,0]/age_conversion_factor, y_pred_m, 'b')
+            plt.ylim([0, 5])
+            plt.title(f'Change in MEG power for {band} band in region {region}\nfemale % change = {pchange_f:.2f} '
+                      f'male % change = {pchange_m:.2f}')
+            plt.show()
+
+    ggseg.plot_dk(change_dict_f, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+                  ylabel=f'% Change MEG {band} power', title=f'Female Percent Change in MEG {band} '
+                  'power from 9 to 17 years of age')
+
+    ggseg.plot_dk(change_dict_m, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+                  ylabel=f'% Change rsMEG {band} power', title=f'Male Percent Change in MEG {band} '
+                  'power from 9 to 17 years of age')
 
 mystop=1
 
