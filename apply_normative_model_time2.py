@@ -30,8 +30,8 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
     columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
 
-    rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
-    rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+    # rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
+    # rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
 
     ########
     # Use same train test subgroups as was used for cortical thickness analysis
@@ -167,7 +167,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
             Z_score_test_matrix.to_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
                                 .format(working_dir, band), index=False)
 
-    plt.show()
+            plt.show()
 
     return Z_score_test_matrix, roi_ids
 
