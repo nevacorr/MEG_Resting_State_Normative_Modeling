@@ -15,9 +15,7 @@ from sklearn.preprocessing import StandardScaler
 
 def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir,
-                               subjects_to_exclude):
-
-    bands = ['theta', 'alpha', 'beta', 'gamma']
+                               subjects_to_exclude, bands):
 
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
@@ -31,8 +29,8 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
     columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
 
-    rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
-    rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+    # rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
+    # rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
 
     # make directories to store files in
     makenewdir('{}/data/'.format(working_dir))
@@ -201,7 +199,11 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             # running this function is to creat and save the model, not to evaluate performance. The following are calcualted:
             # the predicted validation set response (yhat_te), the variance of the predicted response (s2_te), the model
             # parameters (nm),the Zscores for the validation data, and other various metrics (metrics_te)
-            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te,
+
+            # Note outscaler = 'standardize' has been added as an argument. This resolves an issue where modeling does
+            # not appear to work correctly with numbers at the scale of these MEG numbers (in the hundreds instead of
+            # single digits for cortical thickness.
+            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te, outscaler='robminmax',
                                                             testcov=cov_file_te, alg='blr', optimizer='powell',
                                                             savemodel=True, saveoutput=False, standardize=False)
 

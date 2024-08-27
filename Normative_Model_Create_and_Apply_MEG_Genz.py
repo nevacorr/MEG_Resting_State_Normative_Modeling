@@ -21,6 +21,8 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
 run_make_norm_model = 1
 run_apply_norm_model = 1
 subjects_to_exclude = [525] #532 was an outlier on original data set but is no longer
+# bands = ['theta', 'alpha', 'beta', 'gamma']
+bands = ['theta']
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'
@@ -32,16 +34,16 @@ if run_make_norm_model:
 
     Z_time1 = make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
-                               subjects_to_exclude)
+                               subjects_to_exclude, bands)
 
     Z_time1.drop(columns=['subject_id_test'], inplace=True)
 
 if run_apply_norm_model:
 
     Z_time2, roi_ids = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude)
+                                working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
 
-    for band in ['theta', 'alpha', 'beta', 'gamma']:
+    for band in bands:
         Z_time2= pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
                                .format(working_dir, band))
         Z_time2.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)

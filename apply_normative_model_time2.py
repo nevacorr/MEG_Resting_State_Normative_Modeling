@@ -16,9 +16,7 @@ import shutil
 from normative_edited import predict
 
 def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir, MEG_filename, ct_data_dir, subjects_to_exclude):
-
-    bands = ['theta', 'alpha', 'beta', 'gamma']
+                                working_dir, MEG_filename, ct_data_dir, subjects_to_exclude, bands):
 
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
