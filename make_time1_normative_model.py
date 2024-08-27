@@ -203,7 +203,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             # Note outscaler = 'standardize' has been added as an argument. This resolves an issue where modeling does
             # not appear to work correctly with numbers at the scale of these MEG numbers (in the hundreds instead of
             # single digits for cortical thickness.
-            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te, outscaler='robminmax',
+            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te, outscaler='standardize',
                                                             testcov=cov_file_te, alg='blr', optimizer='powell',
                                                             savemodel=True, saveoutput=False, standardize=False)
 

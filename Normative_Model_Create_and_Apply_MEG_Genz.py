@@ -10,7 +10,7 @@ from apply_normative_model_time2 import apply_normative_model_time2
 from plot_and_compute_zdistributions import plot_and_compute_zcores_by_gender
 
 struct_var = 'meg'
-show_plots = 0          #set to 1 to show training and test data spline fit plots.
+show_plots = 1          #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
@@ -21,8 +21,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
 run_make_norm_model = 1
 run_apply_norm_model = 1
 subjects_to_exclude = [525] #532 was an outlier on original data set but is no longer
-# bands = ['theta', 'alpha', 'beta', 'gamma']
-bands = ['theta']
+bands = ['theta', 'alpha', 'beta', 'gamma']
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'

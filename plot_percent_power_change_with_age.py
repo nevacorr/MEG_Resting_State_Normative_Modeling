@@ -2,15 +2,11 @@
 # and returns and plots the percent change in power throughout the cerebral cortex.
 
 import os
-import sys
 import numpy as np
-import argparse
 import pickle
 import matplotlib.pyplot as plt
-import pandas as pd
 from helper_functions_MEG import create_dummy_design_matrix, read_ages_from_file
 import ggseg
-import random
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
@@ -77,7 +73,7 @@ for band in bands:
             # plot model for this brain region
             plt.plot(dummy_cov_f[:,0]/age_conversion_factor, y_pred_f, 'crimson')
             plt.plot(dummy_cov_m[:,0]/age_conversion_factor, y_pred_m, 'b')
-            plt.ylim([0, 5])
+            # plt.ylim([0, 5])
             plt.title(f'Change in MEG power for {band} band in region {region}\nfemale % change = {pchange_f:.2f} '
                       f'male % change = {pchange_m:.2f}')
             plt.show()
