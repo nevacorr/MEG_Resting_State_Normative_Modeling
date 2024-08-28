@@ -1480,6 +1480,10 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
     X = fileio.load(covfile)
     if len(X.shape) == 1:
         X = X[:, np.newaxis]
+    if respfile is not None:
+        Y, maskvol = load_response_vars(respfile, maskfile)
+        if len(Y.shape) == 1:
+            Y = Y[:, np.newaxis]
 
     sample_num = X.shape[0]
     if models is not None:
@@ -1497,9 +1501,13 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
         Xz = scaler_cov[fold].transform(X)
     else:
         Xz = X
+    if respfile is not None:
+        if outscaler in ['standardize', 'minmax', 'robminmax']:
+            Yz = scaler_resp[fold].transform(Y)
+        else:
+            Yz = Y
 
     # estimate the models for all variabels
-    # TODO Z-scores adaptation for SHASH HBR
     for i, m in enumerate(models):
         print("Prediction by model ", i+1, "of", feature_num)
         nm = norm_init(Xz)
@@ -1522,6 +1530,10 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
         else:
             Yhat[:, i] = yhat.squeeze()
             S2[:, i] = s2.squeeze()
+        if respfile is not None:
+            if alg == 'hbr':
+                # Z scores for HBR must be computed independently for each model
+                Z[:,i] = nm.get_mcmc_zscores(Xz, Yz[:, i:i+1], **kwargs)
 
     if respfile is None:
         save_results(None, Yhat, S2, None, outputsuffix=outputsuffix)
@@ -1529,7 +1541,6 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
         return (Yhat, S2)
 
     else:
-        Y, maskvol = load_response_vars(respfile, maskfile)
         if models is not None and len(Y.shape) > 1:
             Y = Y[:, models]
             if meta_data:
@@ -1561,7 +1572,9 @@ def predict(covfile, respfile, maskfile=None, **kwargs):
         else:
             warp = False
 
-        Z = (Y - Yhat) / np.sqrt(S2)
+        if alg != 'hbr':
+            # For HBR the Z scores are already computed
+            Z = (Y - Yhat) / np.sqrt(S2)
 
         print("Evaluating the model ...")
         if meta_data and not warp:
