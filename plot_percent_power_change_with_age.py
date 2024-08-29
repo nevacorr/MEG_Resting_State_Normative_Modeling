@@ -7,6 +7,7 @@ import pickle
 import matplotlib.pyplot as plt
 from helper_functions_MEG import create_dummy_design_matrix, read_ages_from_file
 import ggseg
+from joblib import load
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
@@ -17,6 +18,8 @@ plot_model = 0
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
+
+minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
 
 for band in bands:
 
@@ -31,7 +34,7 @@ for band in bands:
     change_dict_f = {}
     change_dict_m = {}
 
-    for region in all_regions:
+    for regnum, region in enumerate(all_regions):
 
         model_path = (f'/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
                       f'Modeling/data/{band}/ROI_models/{region}/Models/')
@@ -58,10 +61,16 @@ for band in bands:
         y_pred_f = np.dot(dummy_cov_f, data.blr.m)
         y_pred_m = np.dot(dummy_cov_m, data.blr.m)
 
+        # Convert covariate and y values back to unscaled space
+        dummy_cov_f[:,0] = dummy_cov_f[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
+        dummy_cov_m[:,0] = dummy_cov_m[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
+
+        y_pred_f = y_pred_f * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
+        y_pred_m = y_pred_m * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
+
         # calculate percent change with age this brain region
         pchange_f = (y_pred_f[-1] - y_pred_f[0]) / y_pred_f[0] * 100.00
         pchange_m = (y_pred_m[-1] - y_pred_m[0]) / y_pred_m[0] * 100.00
-
 
         region = region.replace('-lh', '_left')
         region = region.replace('-rh', '_right')
