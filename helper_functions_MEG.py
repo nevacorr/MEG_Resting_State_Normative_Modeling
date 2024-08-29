@@ -10,6 +10,7 @@ from matplotlib import pyplot as plt
 from pcntoolkit.normative import predict
 import pandas as pd, seaborn as sns, shutil, glob
 from pcntoolkit.util.utils import create_bspline_basis
+import math
 from scipy import stats
 from scipy.stats import linregress
 from statsmodels.stats.multitest import multipletests
@@ -84,6 +85,7 @@ def create_design_matrix(datatype, agemin, agemax, spline_order, spline_knots, r
             np.savetxt(os.path.join(roi_dir, 'cov_bspline_tr.txt'), X)
         elif datatype == 'test':
             np.savetxt(os.path.join(roi_dir, 'cov_bspline_te.txt'), X)
+
 def create_dummy_design_matrix(struct_var, agemin, agemax, cov_file, spline_order, spline_knots, outputdir):
 
     # make dummy test data covariate file starting with a column for age
@@ -214,10 +216,51 @@ def write_ages_to_file(agemin, agemax, struct_var, outputdir):
 def read_ages_from_file(struct_var, outputdir):
     with open("{}/agemin_agemax_Xtrain_{}.txt".format(outputdir, struct_var), "r") as file:
         lines = file.readlines()
-    agemin = int(lines[0].strip())
-    agemax = int(lines[1].strip())
+    agemin = float(lines[0].strip())
+    agemax = float(lines[1].strip())
     return (agemin, agemax)
 
+def plot_feature_distributions(data_df, column_list):
+    df = data_df[column_list].copy()
+
+    #Plot distributions
+    n_rows=5
+    n_cols=6
+
+    sns.set(font_scale=0.5)
+    num_df_cols=df.shape[1]
+    m=math.ceil(num_df_cols/30)*30
+
+    for row in range(0,m,30):
+        fig, axes = plt.subplots(nrows=n_rows, ncols=n_cols)
+        fig.subplots_adjust(hspace=0.3, wspace=0.5)
+        fig.set_size_inches(12, 15)
+        for i, column in enumerate(column_list[row:row+30]):
+            ax = axes[i//n_cols,i%n_cols]
+            sns.histplot(df[column],ax=ax)
+        plt.show(block=False)
+
+def remove_outliers_IQR(df, cols):
+    # IQR method to remove outliers
+    # Initialize an empty list to hold indices of rows to be removed
+    outlier_indices = []
+
+    for col in cols:
+        Q1 = df[col].quantile(0.25)
+        Q3 = df[col].quantile(0.75)
+        IQR = Q3 - Q1
+
+        # Find outlier indices for the current column
+        outliers = df[(df[col] < (Q1 - 1.5 * IQR)) | (df[col] > (Q3 + 1.5 * IQR))].index
+        outlier_indices.extend(outliers)
+
+    # Convert the list to a set to remove duplicates (same row might be an outlier in multiple columns)
+    outlier_indices = set(outlier_indices)
+
+    # Drop these outliers from the DataFrame
+    df_no_outliers = df.drop(outlier_indices)
+
+    return df_no_outliers
 
 # def fit_regression_model_dummy_data(model_dir, dummy_cov_file_path_female, dummy_cov_file_path_male):
 #     # create dummy data to find equation for linear regression fit between age and structvar

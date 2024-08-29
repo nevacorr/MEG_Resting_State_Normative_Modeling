@@ -5,13 +5,14 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 from pcntoolkit.normative import estimate, evaluate
-from helper_functions_MEG import plot_num_subjs
+from helper_functions_MEG import plot_num_subjs, plot_feature_distributions
 from helper_functions_MEG import create_design_matrix, plot_data_with_spline
-from helper_functions_MEG import create_dummy_design_matrix
+from helper_functions_MEG import create_dummy_design_matrix, remove_outliers_IQR
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
 from helper_functions_MEG import write_ages_to_file
 from prepare_rsMEG_data import prepare_rsMEG_data
 from sklearn.preprocessing import StandardScaler
+from joblib import dump
 
 def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir,
@@ -24,13 +25,16 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
-    # Divide all MEG numbers by 150
-    columns_to_exclude = ['subject', 'agegrp', 'gender', 'agedays']
-    columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
-    columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
+    # Remove the prefix 't1_' from column names
+    rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
 
-    # rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
-    # rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+    # Scale non-categorical covariate and response variables
+    cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
+    cols_to_eval.append('agedays')
+    myscaler = StandardScaler()
+    myscaler.fit(rsd_v1[cols_to_eval])
+    rsd_v1[cols_to_eval] = myscaler.transform(rsd_v1[cols_to_eval])
+    dump(myscaler, f'{working_dir}/std_scaler.bin', compress=True)
 
     # make directories to store files in
     makenewdir('{}/data/'.format(working_dir))
@@ -59,9 +63,6 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
                                  '(Total N=' + str(rsd_v1.shape[0]) + ')', struct_var, 'pre-covid_norm_model',
                                   working_dir)
 
-    # Remove the prefix 't1_' from column names
-    rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
-
     # identify age range in pre-COVID data to be used for modeling
     agemin =rsd_v1['agedays'].min()
     agemax =rsd_v1['agedays'].max()
@@ -84,6 +85,9 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
         makenewdir('{}/data/{}/response_files'.format(working_dir, band))
 
         rscols_band = [item for item in rscols if band in item]
+
+
+
         rs_features = rsd_v1.loc[:, rscols_band]
 
         # # If perform_train_test_split_precovid ==1 , split the training set into training and validation set.
@@ -203,17 +207,17 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             # Note outscaler = 'standardize' has been added as an argument. This resolves an issue where modeling does
             # not appear to work correctly with numbers at the scale of these MEG numbers (in the hundreds instead of
             # single digits for cortical thickness.
-            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te, outscaler='standardize',
+            yhat_te, s2_te, nm, Z_te, metrics_te = estimate(cov_file_tr, resp_file_tr, testresp=resp_file_te,
                                                             testcov=cov_file_te, alg='blr', optimizer='powell',
-                                                            savemodel=True, saveoutput=False, standardize=False)
+                                                            savemodel=True, saveoutput=False, standardize=True)
 
             Rho_te = metrics_te['Rho']
             EV_te = metrics_te['EXPV']
 
-            # if show_plots:
-            #     # plot y versus y hat for validation data
-            #     plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Validation Data', struct_var, roi,
-            #                                            Rho_te, EV_te)
+            if show_plots:
+                # plot y versus y hat for validation data
+                plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Training Data', struct_var, roi,
+                                                       Rho_te, EV_te)
 
             # create dummy design matrices for visualizing model
             dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix(band, agemin, agemax,

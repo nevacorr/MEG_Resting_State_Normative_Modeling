@@ -3,7 +3,6 @@
 # training data set (which is the adolescent visit 1 data). It then uses the model to calculate Z-scores for
 # the post-covid adolescent (visit 2) data.
 # Author: Neva M. Corrigan
-# Date: 21 February, 2024
 ######
 import os
 import pandas as pd
@@ -14,6 +13,7 @@ from helper_functions_MEG import makenewdir, movefiles, create_dummy_design_matr
 from helper_functions_MEG import plot_data_with_spline, create_design_matrix, read_ages_from_file
 import shutil
 from normative_edited import predict
+from joblib import load
 
 def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                 working_dir, MEG_filename, ct_data_dir, subjects_to_exclude, bands):
@@ -25,13 +25,14 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
     rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
 
-    # Divide all MEG numbers by 150
-    columns_to_exclude = ['subject', 'agegrp', 'gender', 'agedays']
-    columns_to_modify1 = rsd_v1.columns.difference(columns_to_exclude)
-    columns_to_modify2 = rsd_v2.columns.difference(columns_to_exclude)
+    # Remove the prefix 't2_' from column names
+    rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
-    # rsd_v1[columns_to_modify1] = rsd_v1[columns_to_modify1] / 150
-    # rsd_v2[columns_to_modify2] = rsd_v2[columns_to_modify2] / 150
+    # Scale non-categorical covariate and response variables
+    cols_to_eval = [col for col in rsd_v2.columns if '-lh' in col or '-rh' in col]
+    cols_to_eval.append('agedays')
+    myscaler = load(f'{working_dir}/std_scaler.bin')
+    rsd_v2[cols_to_eval] = myscaler.transform(rsd_v2[cols_to_eval])
 
     ########
     # Use same train test subgroups as was used for cortical thickness analysis
