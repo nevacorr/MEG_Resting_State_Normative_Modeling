@@ -28,10 +28,10 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     # Remove the prefix 't2_' from column names
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
-    # Scale non-categorical covariate and response variables
+    # Scale non-categorical covariate and response variables using same scaling a time 1 data
     cols_to_eval = [col for col in rsd_v2.columns if '-lh' in col or '-rh' in col]
     cols_to_eval.append('agedays')
-    myscaler = load(f'{working_dir}/std_scaler.bin')
+    myscaler = load(f'{working_dir}/minmax_scaler.bin')
     rsd_v2[cols_to_eval] = myscaler.transform(rsd_v2[cols_to_eval])
 
     ########

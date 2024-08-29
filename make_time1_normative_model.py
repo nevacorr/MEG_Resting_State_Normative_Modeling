@@ -34,7 +34,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     myscaler = MinMaxScaler()
     myscaler.fit(rsd_v1[cols_to_eval])
     rsd_v1[cols_to_eval] = myscaler.transform(rsd_v1[cols_to_eval])
-    dump(myscaler, f'{working_dir}/std_scaler.bin', compress=True)
+    dump(myscaler, f'{working_dir}/minmax_scaler.bin', compress=True)
 
     # make directories to store files in
     makenewdir('{}/data/'.format(working_dir))
