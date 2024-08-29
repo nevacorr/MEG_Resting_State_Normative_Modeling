@@ -11,7 +11,7 @@ from helper_functions_MEG import create_dummy_design_matrix, remove_outliers_IQR
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
 from helper_functions_MEG import write_ages_to_file
 from prepare_rsMEG_data import prepare_rsMEG_data
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from joblib import dump
 
 def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
@@ -31,7 +31,7 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # Scale non-categorical covariate and response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
     cols_to_eval.append('agedays')
-    myscaler = StandardScaler()
+    myscaler = MinMaxScaler()
     myscaler.fit(rsd_v1[cols_to_eval])
     rsd_v1[cols_to_eval] = myscaler.transform(rsd_v1[cols_to_eval])
     dump(myscaler, f'{working_dir}/std_scaler.bin', compress=True)
