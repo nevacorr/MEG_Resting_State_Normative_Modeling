@@ -31,10 +31,10 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
     # Scale non-categorical covariate and response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
     cols_to_eval.append('agedays')
-    myscaler = MinMaxScaler()
-    myscaler.fit(rsd_v1[cols_to_eval])
-    rsd_v1[cols_to_eval] = myscaler.transform(rsd_v1[cols_to_eval])
-    dump(myscaler, f'{working_dir}/minmax_scaler.bin', compress=True)
+    minmax_scaler = MinMaxScaler()
+    minmax_scaler.fit(rsd_v1[cols_to_eval])
+    rsd_v1[cols_to_eval] = minmax_scaler.transform(rsd_v1[cols_to_eval])
+    dump(minmax_scaler, f'{working_dir}/minmax_scaler.bin', compress=True)
 
     # make directories to store files in
     makenewdir('{}/data/'.format(working_dir))
