@@ -168,7 +168,7 @@ def plot_data_with_spline(datastr, struct_var, cov_file, resp_file, dummy_cov_fi
                 .format(working_dir, struct_var, struct_var, roi.replace(struct_var+'-', ''), datastr))
         plt.close(fig)
 
-def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, struct_var, roi, Rho, EV):
+def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, struct_var, roi, Rho, EV, working_dir, showplots):
     cov_data = np.loadtxt(cov_file)
     gender = cov_data[:,1].reshape(-1,1)
     y = np.loadtxt(resp_file).reshape(-1,1)
@@ -193,8 +193,14 @@ def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, struct_var, roi, Rho, E
     plt.xlabel(typestring + ' ' + struct_var)
     plt.ylabel(struct_var + ' estimate on ' + typestring)
     plt.plot([min(y), max(y)], [min(y), max(y)], color='red')  # plots line y = x
-    plt.show(block=False)
-
+    if showplots:
+        if typestring == 'Training Data':
+            plt.show(block=False)
+        else:
+            plt.show()
+    else:
+        plt.savefig(f'{working_dir}/data/{struct_var}/plots/{typestring}_{struct_var}_vs_estimate_{roi}')
+        plt.close(fig)
 
 def barplot_performance_values(struct_var, metric, df, spline_order, spline_knots, outputdir):
     colors = ["blue" if "lh" in x else "green" for x in df.ROI]

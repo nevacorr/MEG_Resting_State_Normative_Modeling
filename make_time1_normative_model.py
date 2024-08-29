@@ -214,10 +214,9 @@ def make_time1_normative_model(struct_var, show_plots, show_nsubject_plots, spli
             Rho_te = metrics_te['Rho']
             EV_te = metrics_te['EXPV']
 
-            if show_plots:
-                # plot y versus y hat for validation data
-                plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Training Data', struct_var, roi,
-                                                       Rho_te, EV_te)
+            # plot y versus y hat for validation data
+            plot_y_v_yhat(cov_file_te, resp_file_te, yhat_te, 'Training Data', band, roi,
+                                                       Rho_te, EV_te, working_dir, show_plots)
 
             # create dummy design matrices for visualizing model
             dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix(band, agemin, agemax,
