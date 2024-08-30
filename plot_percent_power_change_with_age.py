@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 from helper_functions_MEG import create_dummy_design_matrix, read_ages_from_file
 import ggseg
 from joblib import load
+from matplotlib import pyplot as plt
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
@@ -87,11 +88,11 @@ for band in bands:
                       f'male % change = {pchange_m:.2f}')
             plt.show()
 
-    ggseg.plot_dk(change_dict_f, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+    fig_f = ggseg.plot_dk(change_dict_f, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
                   ylabel=f'% Change MEG {band} power', title=f'Female Percent Change in MEG {band} '
                   'power from 9 to 17 years of age')
 
-    ggseg.plot_dk(change_dict_m, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+    fig_m = ggseg.plot_dk(change_dict_m, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
                   ylabel=f'% Change rsMEG {band} power', title=f'Male Percent Change in MEG {band} '
                   'power from 9 to 17 years of age')
 
