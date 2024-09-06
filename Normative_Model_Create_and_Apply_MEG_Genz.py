@@ -46,8 +46,8 @@ for gender in ['male', 'female']:
                                     working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
 
         for band in bands:
-            Z_time2= pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                                   .format(working_dir, band))
+            Z_time2= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+                                   .format(working_dir, gender, band))
             Z_time2.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
             plot_and_compute_zcores_by_gender(Z_time2, band, roi_ids, working_dir)
 
