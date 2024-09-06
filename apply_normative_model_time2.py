@@ -9,21 +9,27 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from prepare_rsMEG_data import prepare_rsMEG_data
 from helper_functions_MEG import plot_num_subjs
-from helper_functions_MEG import makenewdir, movefiles, create_dummy_design_matrix
-from helper_functions_MEG import plot_data_with_spline, create_design_matrix, read_ages_from_file
+from helper_functions_MEG import makenewdir, movefiles, create_design_matrix_one_gender
+from helper_functions_MEG import plot_data_with_spline_one_gender, create_dummy_design_matrix_one_gender, read_ages_from_file
 import shutil
 from normative_edited import predict
 from joblib import load
 
-def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                 working_dir, MEG_filename, ct_data_dir, subjects_to_exclude, bands):
 
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
 
-    # Replace gender codes 1=male 2=female with binary values (make male=1 and female=0)
-    rsd_v1.loc[rsd_v1['gender'] == 2, 'gender'] = 0
-    rsd_v2.loc[rsd_v2['gender'] ==2, 'gender'] = 0
+    if gender == 'male':
+        # keep only data for males
+        rsd_v2 = rsd_v2.loc[rsd_v2['gender'] == 1]
+    else:
+        # keep only data for females
+        rsd_v2 = rsd_v2.loc[rsd_v2['gender'] == 2]
+
+    #remove sex column
+    rsd_v2 = rsd_v2.drop(columns=['gender'])
 
     # Remove the prefix 't2_' from column names
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
@@ -31,7 +37,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     # Scale non-categorical covariate and response variables using same scaling a time 1 data
     cols_to_eval = [col for col in rsd_v2.columns if '-lh' in col or '-rh' in col]
     cols_to_eval.append('agedays')
-    minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
+    minmax_scaler = load(f'{working_dir}/minmax_scaler_{gender}.bin')
     rsd_v2[cols_to_eval] = minmax_scaler.transform(rsd_v2[cols_to_eval])
 
     ########
@@ -56,21 +62,26 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rsd_v2.reset_index(inplace=True)
 
     #show number of subjects by gender and age
+    if gender == "female":
+        genstring = 'Female'
+    elif gender == "male":
+        genstring = 'Male'
+
     if show_nsubject_plots:
-        plot_num_subjs(rsd_v2, f'Subjects by Age with Post-COVID MEGrs Data\nEvaluated by Model\n'
+        plot_num_subjs(gender, rsd_v2, f'{genstring} Subjects by Age with Post-COVID MEGrs Data\nEvaluated by Model\n'
                        +' (Total N=' + str(rsd_v2.shape[0]) + ')', struct_var, 'post-covid_allsubj', working_dir)
 
     # Remove the prefix 't2_' from column names
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
     # read agemin and agemax from file
-    agemin, agemax = read_ages_from_file(struct_var, working_dir)
+    agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
 
     #specify which columns of dataframe to use as covariates
-    rs_covariates = rsd_v2[['agegrp', 'agedays', 'gender']]
+    rs_covariates = rsd_v2[['agegrp', 'agedays']]
 
     #make a matrix of response variables, one for each brain region
-    rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
+    rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays']]
 
     # make file diretories for output
     makenewdir('{}/predict_files/'.format(working_dir))
@@ -80,13 +91,14 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
 
         # make file diretories for band-specific output
 
-        makenewdir('{}/predict_files/{}'.format(working_dir, band))
-        makenewdir('{}/predict_files/{}/plots'.format(working_dir, band))
-        makenewdir('{}/predict_files/{}/ROI_models'.format(working_dir, band))
-        makenewdir('{}/predict_files/{}/covariate_files'.format(working_dir, band))
-        makenewdir('{}/predict_files/{}/response_files'.format(working_dir, band))
+        makenewdir('{}/predict_files/{}_{}'.format(working_dir, gender, band))
+        makenewdir('{}/predict_files/{}_{}/plots'.format(working_dir, gender, band))
+        makenewdir('{}/predict_files/{}_{}/ROI_models'.format(working_dir, gender, band))
+        makenewdir('{}/predict_files/{}_{}/covariate_files'.format(working_dir, gender, band))
+        makenewdir('{}/predict_files/{}_{}/response_files'.format(working_dir, gender, band))
 
         rscols_band = [item for item in rscols if band in item]
+
         rs_features = rsd_v2.loc[:, rscols_band]
 
         X_test = rs_covariates.copy()
@@ -107,32 +119,32 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
         # Create output directories for each region and place covariate and response files for that region in  each directory
         ##########
         for c in y_test.columns:
-            y_test[c].to_csv(f'{working_dir}/resp_te_'+c+'.txt', header=False, index=False)
+            y_test[c].to_csv(f'{working_dir}/resp_te_' + gender + '_' + c + '.txt', header=False, index=False)
             X_test.to_csv(f'{working_dir}/cov_te.txt', sep='\t', header=False, index=False)
             y_test.to_csv(f'{working_dir}/resp_te.txt', sep='\t', header=False, index=False)
 
         for i in roi_ids:
-            roidirname = '{}/predict_files/{}/ROI_models/{}'.format(working_dir, band, i)
+            roidirname = '{}/predict_files/{}_{}/ROI_models/{}'.format(working_dir, gender, band, i)
             makenewdir(roidirname)
-            resp_te_filename = "{}/resp_te_{}_{}.txt".format(working_dir, band, i)
+            resp_te_filename = "{}/resp_te_{}_{}_{}.txt".format(working_dir, gender, band, i)
             resp_te_filepath = roidirname + '/resp_te.txt'
             shutil.copyfile(resp_te_filename, resp_te_filepath)
             cov_te_filepath = roidirname + '/cov_te.txt'
             shutil.copyfile("{}/cov_te.txt".format(working_dir), cov_te_filepath)
 
-        movefiles("{}/resp_*.txt".format(working_dir), "{}/predict_files/{}/response_files/"
-                  .format(working_dir,band))
-        movefiles("{}/cov_t*.txt".format(working_dir), "{}/predict_files/{}/covariate_files/"
-                  .format(working_dir, band))
+        movefiles("{}/resp_*.txt".format(working_dir), "{}/predict_files/{}_{}/response_files/"
+                  .format(working_dir,gender, band))
+        movefiles("{}/cov_t*.txt".format(working_dir), "{}/predict_files/{}_{}/covariate_files/"
+                  .format(working_dir, gender, band))
 
         # specify paths
-        training_dir = '{}/data/{}/ROI_models/'.format(working_dir, band)
-        out_dir = '{}/predict_files/{}/ROI_models/'.format(working_dir, band)
+        training_dir = '{}/data/{}_{}/ROI_models/'.format(working_dir, gender, band)
+        out_dir = '{}/predict_files/{}_{}/ROI_models/'.format(working_dir, gender, band)
         #  this path is where ROI_models folders are located
-        predict_files_dir = '{}/predict_files/{}/ROI_models/'.format(working_dir, band)
+        predict_files_dir = '{}/predict_files/{}_{}/ROI_models/'.format(working_dir, gender, band)
 
         # Create Design Matrix and add in spline basis and intercept
-        create_design_matrix('test', agemin, agemax, spline_order, spline_knots, roi_ids, out_dir)
+        create_design_matrix_one_gender('test', agemin, agemax, spline_order, spline_knots, roi_ids, out_dir)
 
         # Create dataframe to store Zscores
         subjects_test = subjects_test.reshape(-1, 1)
@@ -156,17 +168,17 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
             yhat_te, s2_te, Z = predict(cov_file_te, respfile=resp_file_te, alg='blr', model_path=model_dir)
 
             #create dummy design matrices
-            dummy_cov_file_path_female, dummy_cov_file_path_male= create_dummy_design_matrix(band, agemin, agemax,
+            dummy_cov_file_path= create_dummy_design_matrix_one_gender(band, agemin, agemax,
                                                         cov_file_te, spline_order, spline_knots, working_dir)
 
-            plot_data_with_spline('Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
-                        dummy_cov_file_path_female, dummy_cov_file_path_male, model_dir, roi, show_plots, working_dir)
+            plot_data_with_spline_one_gender(gender, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
+                        dummy_cov_file_path, model_dir, roi, show_plots, working_dir)
 
             Z_score_test_matrix[roi] = Z
 
 
-            Z_score_test_matrix.to_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                                .format(working_dir, band), index=False)
+            Z_score_test_matrix.to_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+                                .format(working_dir, gender, band), index=False)
 
             plt.show()
 
