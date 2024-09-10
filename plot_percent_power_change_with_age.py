@@ -5,10 +5,11 @@ import os
 import numpy as np
 import pickle
 import matplotlib.pyplot as plt
-from helper_functions_MEG import create_dummy_design_matrix, read_ages_from_file
+from helper_functions_MEG import create_dummy_design_matrix_one_gender, read_ages_from_file
 import ggseg
 from joblib import load
 from matplotlib import pyplot as plt
+from matplotlib.colors import Normalize
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
@@ -44,7 +45,7 @@ for band in bands:
         agemin, agemax = read_ages_from_file(struct_var, working_dir)
 
         # Create dummy covariate matrices with bspline values and save to file
-        dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix(band, agemin, agemax,
+        dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix_one_gender(band, agemin, agemax,
                                                                         None, spline_order, spline_knots, working_dir)
         # Load dummy covariate matrices
         dummy_cov_f = np.loadtxt(dummy_cov_file_path_female)
@@ -88,11 +89,15 @@ for band in bands:
                       f'male % change = {pchange_m:.2f}')
             plt.show()
 
-    fig_f = ggseg.plot_dk(change_dict_f, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+    norm = Normalize(vmin=-70, vmax=90)
+    colormap = plt.get_camp('cool')
+    custom_colormap = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
+
+    fig_f = ggseg.plot_dk(change_dict_f, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
                   ylabel=f'% Change MEG {band} power', title=f'Female Percent Change in MEG {band} '
                   'power from 9 to 17 years of age')
 
-    fig_m = ggseg.plot_dk(change_dict_m, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+    fig_m = ggseg.plot_dk(change_dict_m, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
                   ylabel=f'% Change rsMEG {band} power', title=f'Male Percent Change in MEG {band} '
                   'power from 9 to 17 years of age')
 

@@ -40,15 +40,24 @@ for gender in ['male', 'female']:
 
         Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
 
-    if run_apply_norm_model:
+    # if run_apply_norm_model:
+    #
+    #     Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+    #                                 working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
+if run_apply_norm_model:
 
-        Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                    working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
+    for band in bands:
+        Z_time2_male= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+                                   .format(working_dir, 'male', band))
+        Z_time2_male.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
 
-        for band in bands:
-            Z_time2= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                                   .format(working_dir, gender, band))
-            Z_time2.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
-            plot_and_compute_zcores_by_gender(Z_time2, band, roi_ids, working_dir)
+        Z_time2_female= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+                                   .format(working_dir, 'female', band))
+        Z_time2_female.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
+
+        Z_time2['male'] = Z_time2_male
+        Z_time2['female'] = Z_time2_female
+
+        plot_and_compute_zcores_by_gender(band, Z_time2, working_dir)
 
 mystop=1

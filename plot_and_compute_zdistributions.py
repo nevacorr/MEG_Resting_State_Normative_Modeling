@@ -35,7 +35,7 @@ def one_plot(ax, ptitle, ptitleB, Z_male_region, Z_female_region, binedges, zlim
         ax.legend(fontsize=14)
     # plt.tight_layout()
 
-def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_var,f, nokde, working_dir):
+def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_var,f, nokde, working_dir, band):
     sig_string_list = []
     bold_string_list = []
     if nokde == 1:
@@ -56,7 +56,7 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
                 hemi = 'Right hemisphere '
             elif region_string[1] == 'lh':
                 hemi = 'Left hemisphere '
-            region_for_title = region_string[2]
+            region_for_title = region_string[0]
             if region_for_title == 'bankssts':
                 region_for_title = 'banks of STS'
             elif region_for_title == 'frontalpole':
@@ -109,18 +109,18 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
             ptitle = f'{sig_string_list[i]}'
             ptitleB = f'{bold_string_list[i]}'
             one_plot(ax6, ptitle, ptitleB, Z_male[region], Z_female[region], binedges, zlim, yeslegend, nokde)
-            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, struct_var+'_male', figstr, f'fig{fignum}'))
+            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{band}', figstr, f'fig{fignum}'))
             fignum += 1
 
         if i == df.shape[0]-1:
             plt.savefig(
-                '{}/data/{}/plots/{}_{}'.format(working_dir, struct_var+'_male', figstr, f'fig{fignum}'))
+                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{band}', figstr, f'fig{fignum}'))
             fignum += 1
 
         plt.show(block=False)
     return fignum
 
-def plot_by_gender_no_kde(struct_var, Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
+def plot_by_gender_no_kde(band, Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
                           pvals_corrected_m, binedges, nokde, working_dir):
 
     zmax = math.ceil(binedges[-1])
@@ -148,13 +148,13 @@ def plot_by_gender_no_kde(struct_var, Z_female, Z_male, roi_ids, reject_f, rejec
 
     #plot separate figures for each category
     fignum=plot_separate_figures_sorted(rois_pvals_sig_femalesigonly, Z_female, Z_male, binedges, zlim,
-                                        struct_var,0, nokde, working_dir)
-    fignum=plot_separate_figures_sorted(rois_pvals_sig_allsig, Z_female, Z_male, binedges, zlim, struct_var,
-                                        fignum, nokde, working_dir)
-    fignum=plot_separate_figures_sorted(rois_pvals_sig_malessigonly, Z_female, Z_male, binedges, zlim,struct_var,
-                                        fignum, nokde, working_dir)
-    fignum=plot_separate_figures_sorted(rois_pvals_notsig, Z_female, Z_male, binedges, zlim,struct_var,fignum,
-                                        nokde, working_dir)
+                                        band,0, nokde, working_dir, band)
+    fignum=plot_separate_figures_sorted(rois_pvals_sig_allsig, Z_female, Z_male, binedges, zlim, band,
+                                        fignum, nokde, working_dir, band)
+    fignum=plot_separate_figures_sorted(rois_pvals_sig_malessigonly, Z_female, Z_male, binedges, zlim, band,
+                                        fignum, nokde, working_dir, band)
+    fignum=plot_separate_figures_sorted(rois_pvals_notsig, Z_female, Z_male, binedges, zlim,band,fignum,
+                                        nokde, working_dir, band)
 
     plt.show()
     mystop=1
