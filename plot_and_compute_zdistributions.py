@@ -159,10 +159,22 @@ def plot_by_gender_no_kde(band, Z_female, Z_male, roi_ids, reject_f, reject_m, p
     plt.show()
     mystop=1
 
-def plot_and_compute_zcores_by_gender(band, Z_timepoint2, working_dir):
+def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
 
-    Z_male = Z_timepoint2['male']
-    Z_female = Z_timepoint2['female']
+    Z_male = pd.DataFrame()
+    Z_female = pd.DataFrame()
+
+
+    Z_male[:,'theta'] = Z_timepoint2[:,'male_theta']
+    Z_male[:,'alpha'] = Z_timepoint2[:,'male_alpha']
+    Z_male[:,'beta'] = Z_timepoint2[:,'male_beta']
+    Z_male[:,'gamma'] = Z_timepoint2[:,'male_gamma']
+
+    Z_female['theta'] = Z_timepoint2['female_theta']
+    Z_female['alpha'] = Z_timepoint2['female_alpha']
+    Z_female['beta'] = Z_timepoint2['female_beta']
+    Z_female['gamma'] = Z_timepoint2['female_gamma']
+
 
     # add gender to Z score dataframe
     Z_male['gender'] = 1
