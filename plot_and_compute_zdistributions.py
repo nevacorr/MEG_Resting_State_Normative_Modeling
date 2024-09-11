@@ -1,6 +1,7 @@
 ###
 #This program plots post-covid z-scores from the normative model, and makes a separate curve for each not gender
 ###
+from unittest.mock import inplace
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -35,7 +36,7 @@ def one_plot(ax, ptitle, ptitleB, Z_male_region, Z_female_region, binedges, zlim
         ax.legend(fontsize=14)
     # plt.tight_layout()
 
-def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_var,f, nokde, working_dir, band):
+def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_var,f, nokde, working_dir):
     sig_string_list = []
     bold_string_list = []
     if nokde == 1:
@@ -109,19 +110,19 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
             ptitle = f'{sig_string_list[i]}'
             ptitleB = f'{bold_string_list[i]}'
             one_plot(ax6, ptitle, ptitleB, Z_male[region], Z_female[region], binedges, zlim, yeslegend, nokde)
-            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{band}', figstr, f'fig{fignum}'))
+            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male', figstr, f'fig{fignum}'))
             fignum += 1
 
         if i == df.shape[0]-1:
             plt.savefig(
-                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{band}', figstr, f'fig{fignum}'))
+                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male', figstr, f'fig{fignum}'))
             fignum += 1
 
         plt.show(block=False)
     return fignum
 
-def plot_by_gender_no_kde(band, Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
-                          pvals_corrected_m, binedges, nokde, working_dir):
+def plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
+                          pvals_corrected_m, binedges, nokde, working_dir, struct_var):
 
     zmax = math.ceil(binedges[-1])
     zmin = math.floor(binedges[0])
@@ -148,32 +149,30 @@ def plot_by_gender_no_kde(band, Z_female, Z_male, roi_ids, reject_f, reject_m, p
 
     #plot separate figures for each category
     fignum=plot_separate_figures_sorted(rois_pvals_sig_femalesigonly, Z_female, Z_male, binedges, zlim,
-                                        band,0, nokde, working_dir, band)
-    fignum=plot_separate_figures_sorted(rois_pvals_sig_allsig, Z_female, Z_male, binedges, zlim, band,
-                                        fignum, nokde, working_dir, band)
-    fignum=plot_separate_figures_sorted(rois_pvals_sig_malessigonly, Z_female, Z_male, binedges, zlim, band,
-                                        fignum, nokde, working_dir, band)
-    fignum=plot_separate_figures_sorted(rois_pvals_notsig, Z_female, Z_male, binedges, zlim,band,fignum,
-                                        nokde, working_dir, band)
+                                        struct_var,0, nokde, working_dir)
+    fignum=plot_separate_figures_sorted(rois_pvals_sig_allsig, Z_female, Z_male, binedges, zlim, struct_var,
+                                        fignum, nokde, working_dir)
+    fignum=plot_separate_figures_sorted(rois_pvals_sig_malessigonly, Z_female, Z_male, binedges, zlim, struct_var,
+                                        fignum, nokde, working_dir)
+    fignum=plot_separate_figures_sorted(rois_pvals_notsig, Z_female, Z_male, binedges, zlim, struct_var, fignum,
+                                        nokde, working_dir)
 
     plt.show()
     mystop=1
 
 def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
 
-    Z_male = pd.DataFrame()
-    Z_female = pd.DataFrame()
+    Z_timepoint2['male_theta'].rename(columns={c: c + '_theta' for c in Z_timepoint2['male_theta'].columns if c not in ['participant_id']}, inplace=True)
+    Z_timepoint2['male_alpha'].rename(columns={c: c + '_alpha' for c in Z_timepoint2['male_alpha'].columns if c not in ['participant_id']}, inplace=True)
+    Z_timepoint2['male_beta'].rename(columns={c: c + '_beta' for c in Z_timepoint2['male_beta'].columns if c not in ['participant_id']}, inplace=True)
+    Z_timepoint2['male_gamma'].rename(columns={c: c + '_gamma' for c in Z_timepoint2['male_gamma'].columns if c not in ['participant_id']}, inplace=True)
+    Z_male = pd.concat([Z_timepoint2['male_theta'], Z_timepoint2['male_alpha'], Z_timepoint2['male_beta'], Z_timepoint2['male_gamma']], axis=1)
 
-
-    Z_male[:,'theta'] = Z_timepoint2[:,'male_theta']
-    Z_male[:,'alpha'] = Z_timepoint2[:,'male_alpha']
-    Z_male[:,'beta'] = Z_timepoint2[:,'male_beta']
-    Z_male[:,'gamma'] = Z_timepoint2[:,'male_gamma']
-
-    Z_female['theta'] = Z_timepoint2['female_theta']
-    Z_female['alpha'] = Z_timepoint2['female_alpha']
-    Z_female['beta'] = Z_timepoint2['female_beta']
-    Z_female['gamma'] = Z_timepoint2['female_gamma']
+    Z_timepoint2['female_theta'].rename(columns={c: c + '_theta' for c in Z_timepoint2['female_theta'].columns if c not in ['participant_id']},inplace=True)
+    Z_timepoint2['female_alpha'].rename(columns={c: c + '_alpha' for c in Z_timepoint2['female_alpha'].columns if c not in ['participant_id']},inplace=True)
+    Z_timepoint2['female_beta'].rename(columns={c: c + '_beta' for c in Z_timepoint2['female_beta'].columns if c not in ['participant_id']},inplace=True)
+    Z_timepoint2['female_gamma'].rename(columns={c: c + '_gamma' for c in Z_timepoint2['female_gamma'].columns if c not in ['participant_id']},inplace=True)
+    Z_female = pd.concat([Z_timepoint2['female_theta'], Z_timepoint2['female_alpha'], Z_timepoint2['female_beta'], Z_timepoint2['female_gamma']], axis=1)
 
 
     # add gender to Z score dataframe
@@ -223,6 +222,6 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
     binedges = np.linspace(binmin-0.5, binmax+0.5, 24)
 
     nokde=1
-    plot_by_gender_no_kde(band, Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
+    plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
                           pvals_corrected_m, binedges, nokde, working_dir)
 

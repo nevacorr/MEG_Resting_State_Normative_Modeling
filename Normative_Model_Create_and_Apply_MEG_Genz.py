@@ -18,7 +18,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # validations (test) sets. If this is set to 0, the entire training set is used
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
-run_make_norm_model = 1
+run_make_norm_model = 0
 run_apply_norm_model = 1
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
 bands = ['theta', 'alpha', 'beta', 'gamma']
@@ -39,10 +39,10 @@ for gender in ['male', 'female']:
 
         Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
 
-    if run_apply_norm_model:
+    # if run_apply_norm_model:
 
-        Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                    working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
+        # Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+        #                             working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
 
 if run_apply_norm_model:
 
