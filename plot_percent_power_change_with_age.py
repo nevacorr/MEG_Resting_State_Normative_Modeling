@@ -4,7 +4,6 @@
 import os
 import numpy as np
 import pickle
-import matplotlib.pyplot as plt
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, read_ages_from_file
 import ggseg
 from joblib import load
@@ -23,83 +22,80 @@ spline_knots = 2
 
 minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
 
-for band in bands:
+for gender in ['male', 'female']:
+    for band in bands:
 
-    model_dir_path = f'{working_dir}/data/{band}/ROI_models'
+        model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
 
-    # Get a list of all region names by listing directories in model folder
-    all_regions = [d for d in os.listdir(model_dir_path)
-                   if os.path.isdir(os.path.join(model_dir_path, d))]
-    all_regions.sort()
+        # Get a list of all region names by listing directories in model folder
+        all_regions = [d for d in os.listdir(model_dir_path)
+                       if os.path.isdir(os.path.join(model_dir_path, d))]
+        all_regions.sort()
 
-    # Initialize dictionaries to store percent change values for males and females
-    change_dict_f = {}
-    change_dict_m = {}
+        # Initialize dictionaries to store percent change values
+        change_dict = {}
 
-    for regnum, region in enumerate(all_regions):
+        for regnum, region in enumerate(all_regions):
 
-        model_path = (f'/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
-                      f'Modeling/data/{band}/ROI_models/{region}/Models/')
+            model_path = (f'/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
+                          f'Modeling/data/{gender}_{band}/ROI_models/{region}/Models/')
 
-        # Read agemin and agemax from file
-        agemin, agemax = read_ages_from_file(struct_var, working_dir)
+            # Read agemin and agemax from file
+            agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
 
-        # Create dummy covariate matrices with bspline values and save to file
-        dummy_cov_file_path_female, dummy_cov_file_path_male = create_dummy_design_matrix_one_gender(band, agemin, agemax,
-                                                                        None, spline_order, spline_knots, working_dir)
-        # Load dummy covariate matrices
-        dummy_cov_f = np.loadtxt(dummy_cov_file_path_female)
-        dummy_cov_m = np.loadtxt(dummy_cov_file_path_male)
+            # Create dummy covariate matrices with bspline values and save to file
+            dummy_cov_file_path = create_dummy_design_matrix_one_gender(band, agemin, agemax,
+                                                                            None, spline_order, spline_knots, working_dir)
+            # Load dummy covariate matrix
+            dummy_cov = np.loadtxt(dummy_cov_file_path)
 
-        # remove last row which has erroneous bspline values
-        dummy_cov_f = dummy_cov_f[:-1]
-        dummy_cov_m = dummy_cov_m[:-1]
+            # remove last row which has erroneous bspline values
+            dummy_cov = dummy_cov[:-1]
 
-        # Open model parameter file
-        with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
-            data = pickle.load(file)
+            # Open model parameter file
+            with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
+                data = pickle.load(file)
 
-        # Calculate predictions from model based on covariate data
-        y_pred_f = np.dot(dummy_cov_f, data.blr.m)
-        y_pred_m = np.dot(dummy_cov_m, data.blr.m)
+            # Calculate predictions from model based on covariate data
+            y_pred = np.dot(dummy_cov, data.blr.m)
 
-        # Convert covariate and y values back to unscaled space
-        dummy_cov_f[:,0] = dummy_cov_f[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
-        dummy_cov_m[:,0] = dummy_cov_m[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
+            # Convert covariate and y values back to unscaled space
+            dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
-        y_pred_f = y_pred_f * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
-        y_pred_m = y_pred_m * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
+            y_pred = y_pred * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
 
-        # calculate percent change with age this brain region
-        pchange_f = (y_pred_f[-1] - y_pred_f[0]) / y_pred_f[0] * 100.00
-        pchange_m = (y_pred_m[-1] - y_pred_m[0]) / y_pred_m[0] * 100.00
+            # calculate percent change with age this brain region
+            pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
 
-        region = region.replace('-lh', '_left')
-        region = region.replace('-rh', '_right')
+            region = region.replace('-lh', '_left')
+            region = region.replace('-rh', '_right')
 
-        change_dict_f[region] = pchange_f
-        change_dict_m[region] = pchange_m
+            change_dict[region] = pchange
 
-        if plot_model:
-            # plot model for this brain region
-            plt.plot(dummy_cov_f[:,0]/age_conversion_factor, y_pred_f, 'crimson')
-            plt.plot(dummy_cov_m[:,0]/age_conversion_factor, y_pred_m, 'b')
-            # plt.ylim([0, 5])
-            plt.title(f'Change in MEG power for {band} band in region {region}\nfemale % change = {pchange_f:.2f} '
-                      f'male % change = {pchange_m:.2f}')
-            plt.show()
+            if plot_model:
+                if "gender" == 'male':
+                    c = 'b'
+                else:
+                    c='crimson'
+                # plot model for this brain region
+                plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
+                # plt.ylim([0, 5])
+                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} % change = {pchange:.2f}')
+                plt.show()
 
-    norm = Normalize(vmin=-70, vmax=90)
-    colormap = plt.get_camp('cool')
-    custom_colormap = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
+        norm = Normalize(vmin=-70, vmax=90)
+        colormap = plt.get_cmap('cool')
+        custom_colormap = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
 
-    fig_f = ggseg.plot_dk(change_dict_f, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
-                  ylabel=f'% Change MEG {band} power', title=f'Female Percent Change in MEG {band} '
-                  'power from 9 to 17 years of age')
+        if 'gender' == 'male':
+            genstr = 'Male'
+        else:
+            genstr = 'Female'
 
-    fig_m = ggseg.plot_dk(change_dict_m, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
-                  ylabel=f'% Change rsMEG {band} power', title=f'Male Percent Change in MEG {band} '
-                  'power from 9 to 17 years of age')
+        fig = ggseg.plot_dk(change_dict, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+                      ylabel=f'% Change MEG {band} power', title=f'{genstr} Percent Change in MEG {band} '
+                      'power from 9 to 17 years of age')
+
 
 mystop=1
 
