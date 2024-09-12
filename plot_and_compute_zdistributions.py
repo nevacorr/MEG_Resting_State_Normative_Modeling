@@ -243,6 +243,9 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
     binmin = min(minf, minm)
     binmax = max(maxf, maxm)
 
+    binmin = -3.5
+    binmax = 3.5
+
     binedges = np.linspace(binmin-0.5, binmax+0.5, 24)
 
     nokde=1
