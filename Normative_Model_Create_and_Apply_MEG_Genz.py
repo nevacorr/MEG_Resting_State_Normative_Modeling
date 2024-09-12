@@ -58,6 +58,6 @@ if run_apply_norm_model:
         Z_time2[f'male_{band}'] = Z_time2_male
         Z_time2[f'female_{band}'] = Z_time2_female
 
-    plot_and_compute_zcores_by_gender(Z_time2, working_dir)
+    plot_and_compute_zcores_by_gender(Z_time2, working_dir, bands)
 
 mystop=1

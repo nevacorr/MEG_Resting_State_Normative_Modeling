@@ -1,7 +1,7 @@
 ###
 #This program plots post-covid z-scores from the normative model, and makes a separate curve for each not gender
 ###
-from unittest.mock import inplace
+
 
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -66,7 +66,7 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
                 region_for_title = 'superior temporal'
             elif region_for_title == 'lateraloccipital':
                 region_for_title = 'lateral occipital'
-        bold_string = f'{hemi}{region_for_title}\n'
+        bold_string = f'{struct_var} {hemi}{region_for_title}\n'
         not_bold_string = (f'female mean = {zmean_f:.2} p = {df.loc[i, "pfemale"]:.2e}\n '
                            f'male mean = {zmean_m:.2} p = {df.loc[i, "pmale"]:.2e}')
         bold_string_list.append(bold_string)
@@ -110,12 +110,12 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
             ptitle = f'{sig_string_list[i]}'
             ptitleB = f'{bold_string_list[i]}'
             one_plot(ax6, ptitle, ptitleB, Z_male[region], Z_female[region], binedges, zlim, yeslegend, nokde)
-            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male', figstr, f'fig{fignum}'))
+            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{struct_var}', figstr, f'fig{fignum}'))
             fignum += 1
 
         if i == df.shape[0]-1:
             plt.savefig(
-                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male', figstr, f'fig{fignum}'))
+                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{struct_var}', figstr, f'fig{fignum}'))
             fignum += 1
 
         plt.show(block=False)
@@ -160,7 +160,23 @@ def plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_c
     plt.show()
     mystop=1
 
-def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
+def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
+
+    #get list of all brain regions
+    sinfo = ['participant_id', 'gender']
+    roi_ids_orig = [col for col in Z_timepoint2['male_theta'].columns if col not in sinfo]
+
+    Z_male_orig = {}
+    Z_male_orig['theta'] = Z_timepoint2['male_theta'].copy()
+    Z_male_orig['alpha'] = Z_timepoint2['male_alpha'].copy()
+    Z_male_orig['beta'] = Z_timepoint2['male_beta'].copy()
+    Z_male_orig['gamma'] = Z_timepoint2['male_gamma'].copy()
+
+    Z_female_orig = {}
+    Z_female_orig['theta'] = Z_timepoint2['female_theta'].copy()
+    Z_female_orig['alpha'] = Z_timepoint2['female_alpha'].copy()
+    Z_female_orig['beta'] = Z_timepoint2['female_beta'].copy()
+    Z_female_orig['gamma'] = Z_timepoint2['female_gamma'].copy()
 
     Z_timepoint2['male_theta'].rename(columns={c: c + '_theta' for c in Z_timepoint2['male_theta'].columns if c not in ['participant_id']}, inplace=True)
     Z_timepoint2['male_alpha'].rename(columns={c: c + '_alpha' for c in Z_timepoint2['male_alpha'].columns if c not in ['participant_id']}, inplace=True)
@@ -184,7 +200,6 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
     Z_female.insert(1, 'gender', gender)
 
     #get list of all brain regions
-    sinfo = ['participant_id', 'gender']
     roi_ids = [col for col in Z_male.columns if col not in sinfo]
 
     p_values_f = []
@@ -232,6 +247,16 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
 
     nokde=1
 
-    plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
-                          pvals_corrected_m, binedges, nokde, working_dir)
+    rlen = len(roi_ids_orig)
 
+    for i, band in enumerate(bands):
+
+        reject_f_band = reject_f[rlen * i : rlen * (i+1)].copy()
+        reject_m_band = reject_m[rlen * i : rlen * (i+1)].copy()
+        pvals_corrected_f_band = pvals_corrected_f[rlen * i : rlen * (i+1)].copy()
+        pvals_corrected_m_band = pvals_corrected_m[rlen * i: rlen * (i + 1)].copy()
+
+        plot_by_gender_no_kde(Z_female_orig[band], Z_male_orig[band], roi_ids_orig, reject_f_band, reject_m_band, pvals_corrected_f_band,
+                          pvals_corrected_m_band, binedges, nokde, working_dir, band)
+
+        mystop=1
