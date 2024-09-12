@@ -174,7 +174,6 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
     Z_timepoint2['female_gamma'].rename(columns={c: c + '_gamma' for c in Z_timepoint2['female_gamma'].columns if c not in ['participant_id']},inplace=True)
     Z_female = pd.concat([Z_timepoint2['female_theta'], Z_timepoint2['female_alpha'], Z_timepoint2['female_beta'], Z_timepoint2['female_gamma']], axis=1)
 
-
     # add gender to Z score dataframe
     Z_male['gender'] = 1
     Z_female['gender'] = 2
@@ -199,8 +198,18 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
         t_statistic_m, p_value_m = stats.ttest_1samp(zm, popmean=0, nan_policy='raise')
         p_values_m.append(p_value_m)
 
-    reject_f, pvals_corrected_f, a1_f, a2_f = smt.multipletests(p_values_f, alpha=0.05, method='fdr_bh')
-    reject_m, pvals_corrected_m, a1_m, a2_m = smt.multipletests(p_values_m, alpha=0.05, method='fdr_bh')
+    # Combine male and female pvalues into same list for multiple comparison correction
+    pf_length = len(p_values_f)
+    p_values = p_values_f + p_values_m
+
+    # Perform multiple comparison correction
+    reject, pvals_corrected, a1, a2 = smt.multipletests(p_values, alpha=0.05, method='fdr_bh')
+
+    # Separate females from male values
+    reject_f = reject[:pf_length]
+    reject_m = reject[pf_length:]
+    pvals_corrected_f = pvals_corrected[:pf_length]
+    pvals_corrected_m = pvals_corrected[pf_length:]
 
     #write regions where reject_f is True to file
     regions_reject_f = [roi_id for roi_id, reject_value in zip(roi_ids, reject_f) if reject_value]
@@ -208,8 +217,8 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
 
     filepath = working_dir
     if len(regions_reject_f) > 1 :
-        write_list_to_file(regions_reject_f, filepath + f'regions_reject_null_{band}_female.csv')
-        write_list_to_file(regions_reject_m, filepath + f'regions_reject_null_{band}_male.csv')
+        write_list_to_file(regions_reject_f, filepath + f'regions_reject_null_rsMEG_female.csv')
+        write_list_to_file(regions_reject_m, filepath + f'regions_reject_null_rsMEG_male.csv')
 
     maxf = Z_female[roi_ids].max(axis=0).max()
     maxm = Z_male[roi_ids].max(axis=0).max()
@@ -222,6 +231,7 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir):
     binedges = np.linspace(binmin-0.5, binmax+0.5, 24)
 
     nokde=1
+
     plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_corrected_f,
                           pvals_corrected_m, binedges, nokde, working_dir)
 
