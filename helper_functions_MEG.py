@@ -247,32 +247,26 @@ def remove_outliers_IQR(df, cols):
 
     return df_no_outliers
 
-# def fit_regression_model_dummy_data(model_dir, dummy_cov_file_path_female, dummy_cov_file_path_male):
-#     # create dummy data to find equation for linear regression fit between age and structvar
-#     dummy_predictors_f = pd.read_csv(dummy_cov_file_path_female, delim_whitespace=True, header=None)
-#     dummy_predictors_m = pd.read_csv(dummy_cov_file_path_male, delim_whitespace=True, header=None)
-#     dummy_ages_f = dummy_predictors_f.iloc[:, 0]
-#     dummy_ages_m = dummy_predictors_m.iloc[:, 0]
-#
-#     # calculate predicted values for dummy covariates for male and female
-#     output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
-#     output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
-#
-#     yhat_predict_dummy_f = output_f[0]
-#     yhat_predict_dummy_m = output_m[0]
-#
-#     # remove last element of age and output arrays
-#     last_index = len(yhat_predict_dummy_f) - 1
-#     yhat_predict_dummy_f = np.delete(yhat_predict_dummy_f, -1)
-#     yhat_predict_dummy_m = np.delete(yhat_predict_dummy_m, -1)
-#     dummy_ages_f = np.delete(dummy_ages_f.to_numpy(), -1)
-#     dummy_ages_m = np.delete(dummy_ages_m.to_numpy(), -1)
-#
-#     # find slope and intercept of lines
-#     slope_f, intercept_f, rvalue_f, pvalue_f, std_error_f = stats.linregress(dummy_ages_f, yhat_predict_dummy_f)
-#     slope_m, intercept_m, rvalue_m, pvalue_m, std_error_m = stats.linregress(dummy_ages_m, yhat_predict_dummy_m)
-#
-#     return slope_f, intercept_f, slope_m, intercept_m
+def fit_regression_model_dummy_data_one_gender(model_dir, dummy_cov_file_path):
+    # create dummy data to find equation for linear regression fit between age and structvar
+    dummy_predictors = pd.read_csv(dummy_cov_file_path, delim_whitespace=True, header=None)
+    dummy_ages = dummy_predictors.iloc[:, 0]
+
+    # calculate predicted values for dummy covariates for male and female
+    output = predict(dummy_cov_file_path, respfile=None, alg='blr', model_path=model_dir)
+    output = predict(dummy_cov_file_path, respfile=None, alg='blr', model_path=model_dir)
+
+    yhat_predict_dummy = output[0]
+
+    # remove last element of age and output arrays
+    last_index = len(yhat_predict_dummy) - 1
+    yhat_predict_dummy = np.delete(yhat_predict_dummy, -1)
+    dummy_ages = np.delete(dummy_ages.to_numpy(), -1)
+
+    # find slope and intercept of lines
+    slope, intercept, rvalue, pvalue, std_error = stats.linregress(dummy_ages, yhat_predict_dummy)
+
+    return slope, intercept, pvalue
 
 
 def read_text_list(filename):
