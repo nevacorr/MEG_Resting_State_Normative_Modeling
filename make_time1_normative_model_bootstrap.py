@@ -199,18 +199,14 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, struct_var, show_plots,
                                nm.blr.m[3] * (dummy_cov[index_for_x2, 3] - dummy_cov[index_for_x1, 3])) /
                               (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]))
 
-    mystop=1
-
     # Calculate confidence intervals
     for reg in model_slope[band].columns:
         slopes_reg = model_slope[band].loc[:, reg]
-        conf_interval.loc[band, reg] = np.percentile(slopes_reg.to_numpy(), [2.5, 97.5])
-        if conf_interval.loc[band, reg][0] < 0 < conf_interval.loc[band,reg][1]:
+        lower_bound, upper_bound = np.percentile(slopes_reg.to_numpy(), [2.5, 97.5])
+        if lower_bound < 0 < upper_bound:
             sig.loc[band, reg] = 0
         else:
             sig.loc[band, reg] = 1
-
-    mystop=1
 
     sig.to_csv(f'{gender}_significance of slopes by band and region')
 
