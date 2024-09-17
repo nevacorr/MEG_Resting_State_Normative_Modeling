@@ -18,7 +18,7 @@ working_dir = os.getcwd()
 bands = ['theta', 'alpha', 'beta', 'gamma']
 
 # Set some options
-plot_model = 1
+plot_model = 0
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
@@ -98,21 +98,21 @@ for gender in ['male', 'female']:
                 # plot model for this brain region
                 plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
                 plt.ylim([0, 500])
-                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange}')
+                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f}')
                 plt.show()
 
         norm = Normalize(vmin=-70, vmax=90)
         colormap = plt.get_cmap('cool')
         custom_colormap = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
 
-        # if gender == 'male':
-        #     genstr = 'Male'
-        # else:
-        #     genstr = 'Female'
-        #
-        # fig = ggseg.plot_dk(change_dict, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
-        #               ylabel=f'% Change MEG {band} power', title=f'{genstr} Percent Change in MEG {band} '
-        #               'power from 9 to 17 years of age')
+        if gender == 'male':
+            genstr = 'Male'
+        else:
+            genstr = 'Female'
+
+        fig = ggseg.plot_dk(change_dict, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+                      ylabel=f'% Change MEG {band} power', title=f'{genstr} Percent Change in MEG {band} '
+                      'power from 9 to 17 years of age')
 
 
 mystop=1

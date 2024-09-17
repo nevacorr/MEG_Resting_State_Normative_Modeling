@@ -5,7 +5,9 @@
 # Embedded file name: /home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling/helper_functions_MEG.py
 # Compiled at: 2024-01-19 12:53:25
 # Size of source mod 2**32: 17165 bytes
-import os, numpy as np
+import os
+import numpy as np
+import shutil
 from matplotlib import pyplot as plt
 from pcntoolkit.normative import predict
 import pandas as pd, seaborn as sns, shutil, glob
@@ -45,6 +47,13 @@ def makenewdir(path):
     if isExist is False:
         os.mkdir(path)
         print("made directory {}".format(path))
+
+def makenewdir_deleteold(path):
+    isExist = os.path.exists(path)
+    if isExist is True:
+        shutil.rmtree(path)
+    os.mkdir(path)
+    print("made directory {}". format(path))
 
 
 def movefiles(pattern, folder):
