@@ -84,27 +84,7 @@ for gender in ['male', 'female']:
 
             slope, intercept, pvalue = fit_regression_model_dummy_data_one_gender(model_path, dummy_cov_file_path)
 
-            # Compute significance of slope
-            # Compute average precision of noise and put in diagonal matrix
-            averagep = np.mean(data.blr.lambda_n_vec)
-            precision_noise = np.zeros_like(data.blr.Lambda_a)
-            np.fill_diagonal(precision_noise, averagep)
-            # Combine with prior precision matrix
-            #precision_matrix = precision_noise + data.blr.Lambda_a
-            precision_matrix = data.blr.Lambda_a
-            # Calculate posterior covariance matrix (inverse of prior precision matrix)
-            posterior_cov_matrix = np.linalg.inv(precision_matrix)
-            # Extract standard errors (the diagonal elements of posterior covariance matrix)
-            # Note that the diagonal values are identical so  use just first value along diagonal
-            standard_error_coefficients = np.sqrt(posterior_cov_matrix[0,0])
-            # Compute t-statistic for coefficient for age
-            t_age = data.blr.m[0]/standard_error_coefficients
-            # Calculate degrees of freedom (number of data points used to create model minus 5 (4 coefficients and 1 intercept)
-            df = data.blr.lambda_n_vec.size - 5
-            # Calculate two-tailed p-value
-            pvalue_age.append(2 * (1 - stats.t.cdf(abs(t_age), df=df)))
-
-            # Convert covariate and y values back to unscaled space
+                        # Convert covariate and y values back to unscaled space
             dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
             change_dict[region] = pchange
@@ -118,7 +98,7 @@ for gender in ['male', 'female']:
                 # plot model for this brain region
                 plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
                 plt.ylim([0, 500])
-                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} p = {pvalue_age[regnum]:.3f}')
+                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange}')
                 plt.show()
 
         norm = Normalize(vmin=-70, vmax=90)
