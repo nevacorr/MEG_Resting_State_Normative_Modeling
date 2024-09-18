@@ -131,16 +131,9 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, struct_var, show_plots,
             create_design_matrix_one_gender('test', agemin, agemax, spline_order, spline_knots, roi_ids, data_dir)
             create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, roi_ids, data_dir)
 
-            # Create pandas dataframes with header names to save evaluation metrics
-            blr_metrics = pd.DataFrame(columns=['ROI', 'MSLL', 'EV', 'SMSE', 'RMSE', 'Rho'])
-            blr_site_metrics = pd.DataFrame(
-            columns=['ROI', 'y_mean', 'y_var', 'yhat_mean', 'yhat_var', 'MSLL', 'EV', 'SMSE', 'RMSE', 'Rho'])
-
             # create dataframe with subject numbers to put the Z scores in. Here 'test' refers to the validation set
             subjects_test = subjects_test.reshape(-1, 1)
             subjects_train = subjects_train.reshape(-1, 1)
-            Z_score_test_matrix = pd.DataFrame(subjects_test, columns=['subject_id_test'])
-            Z_score_train_matrix = pd.DataFrame(subjects_train, columns=['subject_id_train'])
 
             # Estimate the normative model using a for loop to iterate over brain regions. The estimate function uses a few
             # specific arguments that are worth commenting on:
