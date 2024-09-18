@@ -14,9 +14,8 @@ from prepare_rsMEG_data import prepare_rsMEG_data
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from joblib import dump
 
-def make_time1_normative_model_bootstrap(rsd_v1, gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                               perform_train_test_split_precovid, working_dir, MEG_filename, ct_data_dir,
-                               subjects_to_exclude, bands, n_bootstraps):
+def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_knots,
+                               working_dir, bands, n_bootstraps):
 
     # make directories to store files in
     makenewdir('{}/data_bootstrap/'.format(working_dir))

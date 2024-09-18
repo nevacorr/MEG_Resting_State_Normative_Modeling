@@ -46,11 +46,8 @@ for gender in ['male', 'female']:
 
         if perform_bootstrap == 1:
 
-            make_time1_normative_model_bootstrap(rsd_v1, gender, struct_var, show_plots, show_nsubject_plots,
-                                                         spline_order, spline_knots,
-                                                         perform_train_test_split_precovid, working_dir,
-                                                         MEG_resting_state_filename, ct_data_dir,
-                                                         subjects_to_exclude, bands, n_bootstraps)
+            make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
+                                                         working_dir, bands, n_bootstraps)
 
     if run_apply_norm_model:
 
