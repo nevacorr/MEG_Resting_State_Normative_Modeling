@@ -22,7 +22,7 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
 run_make_norm_model = 1
 run_apply_norm_model = 0
 perform_bootstrap = 1
-n_bootstraps = 50
+n_bootstraps = 20
 
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
 # bands = ['theta', 'alpha', 'beta', 'gamma']

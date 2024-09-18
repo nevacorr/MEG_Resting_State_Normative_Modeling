@@ -200,5 +200,5 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
         else:
             sig.loc[band, reg] = 1
 
-    sig.to_csv(f'{gender}_significance of slopes by band and region')
+    sig.to_csv(f'{working_dir}/{gender}_significance of slopes by band and region')
 
