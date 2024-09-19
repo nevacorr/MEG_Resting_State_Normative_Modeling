@@ -39,5 +39,5 @@ def create_custom_colormap():
     custom_colormap = LinearSegmentedColormap('CustomYellowGrayGreen', cdict3)
     plt.register_cmap(cmap=custom_colormap)
 
-    return custom_colormap, 'CustomYellowGrayGreen'
+    return custom_colormap
 

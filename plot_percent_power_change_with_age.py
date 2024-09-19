@@ -4,18 +4,21 @@
 import os
 import numpy as np
 import pickle
+import pandas as pd
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, read_ages_from_file
 from helper_functions_MEG import fit_regression_model_dummy_data_one_gender
 import ggseg
 from joblib import load
+from matplotlib import colormaps
 from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize
+from matplotlib.colors import Normalize, ListedColormap
 from scipy.stats import pearsonr
 from scipy import stats
+from create_custom_colormap import create_custom_colormap
+
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
-bands = ['theta', 'alpha', 'beta', 'gamma']
 
 # Set some options
 plot_model = 0
@@ -25,7 +28,15 @@ spline_knots = 2
 
 minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
 
+colormap = create_custom_colormap()
+
 for gender in ['male', 'female']:
+
+    df_sig= pd.read_csv(f'{working_dir}/{gender}_significance of slopes by band and region.csv', index_col=0)
+    df_sig = df_sig.astype(int)
+
+    bands = df_sig.index.to_list()
+
     for band in bands:
 
         model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
@@ -64,33 +75,26 @@ for gender in ['male', 'female']:
             # Calculate predictions from model based on covariate data
             y_pred = np.dot(dummy_cov, data.blr.m)
 
-            # Calculate the slope of the line
-            index_for_x1 = 0
-            index_for_x2 = dummy_cov.shape[0]-1
-
-            modelslope = ((data.blr.m[0] * (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]) +
-                          data.blr.m[1] * (dummy_cov[index_for_x2, 1] - dummy_cov[index_for_x1, 1]) +
-                          data.blr.m[2] * (dummy_cov[index_for_x2, 2] - dummy_cov[index_for_x1, 2]) +
-                          data.blr.m[3] * (dummy_cov[index_for_x2, 3] - dummy_cov[index_for_x1, 3]))/
-                          (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]))
-
             y_pred = y_pred * minmax_scaler.data_range_[regnum] + minmax_scaler.data_min_[regnum]
 
             # calculate percent change with age this brain region
             pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
 
-            region = region.replace('-lh', '_left')
-            region = region.replace('-rh', '_right')
-
-            slope, intercept, pvalue = fit_regression_model_dummy_data_one_gender(model_path, dummy_cov_file_path)
+            if '-lh' in region:
+                r = region.replace('-lh', '_left')
+            else:
+                r = region.replace('-rh', '_right')
 
                         # Convert covariate and y values back to unscaled space
             dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
-            change_dict[region] = pchange
+            if df_sig.loc[band, region] != 0:
+                change_dict[r] = pchange
+            else:
+                change_dict[r] = 0.0
 
             if plot_model:
-                print(f'gender={gender}')
+                plt.figure()
                 if gender == 'male':
                     c = 'b'
                 else:
@@ -98,12 +102,8 @@ for gender in ['male', 'female']:
                 # plot model for this brain region
                 plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
                 plt.ylim([0, 500])
-                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f}')
+                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
                 plt.show()
-
-        norm = Normalize(vmin=-70, vmax=90)
-        colormap = plt.get_cmap('cool')
-        custom_colormap = plt.cm.ScalarMappable(norm=norm, cmap=colormap)
 
         if gender == 'male':
             genstr = 'Male'
