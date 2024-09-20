@@ -89,7 +89,7 @@ for gender in ['male', 'female']:
             dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
             if df_sig.loc[band, region] != 0:
-                change_dict[r] = pchange
+                change_dict[r] = 1.0
             else:
                 change_dict[r] = 0.0
 
@@ -110,7 +110,7 @@ for gender in ['male', 'female']:
         else:
             genstr = 'Female'
 
-        fig = ggseg.plot_dk(change_dict, cmap=colormap, background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
+        fig = ggseg.plot_dk(change_dict, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
                       ylabel=f'% Change MEG {band} power', title=f'{genstr} Percent Change in MEG {band} '
                       'power from 9 to 17 years of age')
 
