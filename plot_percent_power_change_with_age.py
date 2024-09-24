@@ -7,7 +7,8 @@ import pickle
 import pandas as pd
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, read_ages_from_file
 from helper_functions_MEG import fit_regression_model_dummy_data_one_gender
-import ggseg
+# import ggseg
+import myggseg
 from joblib import load
 from matplotlib import colormaps
 from matplotlib import pyplot as plt
@@ -89,9 +90,11 @@ for gender in ['male', 'female']:
             dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
             if df_sig.loc[band, region] != 0:
-                change_dict[r] = 1.0
-            else:
-                change_dict[r] = 0.0
+                change_dict[r] = pchange
+                # if pchange > 0:
+                #     change_dict[r] = 1.0
+                # else:
+                #     change_dict[r] = 0.0
 
             if plot_model:
                 plt.figure()
@@ -102,18 +105,18 @@ for gender in ['male', 'female']:
                 # plot model for this brain region
                 plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
                 plt.ylim([0, 500])
-                plt.title(f'Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
+                plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
                 plt.show()
 
-        if gender == 'male':
-            genstr = 'Male'
-        else:
-            genstr = 'Female'
+        filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
+        myggseg.plot_dk(change_dict, working_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+                      title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
-        fig = ggseg.plot_dk(change_dict, cmap='cool', background='k', edgecolor='w', bordercolor='gray', figsize=(8,8),
-                      ylabel=f'% Change MEG {band} power', title=f'{genstr} Percent Change in MEG {band} '
-                      'power from 9 to 17 years of age')
-
+        # Write regions showing significant change with age to file
+        with open(f'{working_dir}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+                  'w') as file:
+            for key in change_dict.keys():
+                file.write(f'{key} {change_dict[key]}\n')
 
 mystop=1
 
