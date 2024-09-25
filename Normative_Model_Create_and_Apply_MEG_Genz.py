@@ -12,7 +12,7 @@ from make_time1_normative_model_bootstrap import make_time1_normative_model_boot
 
 struct_var = 'meg'
 show_plots = 0          #set to 1 to show training and test data spline fit plots.
-show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
+show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
 perform_train_test_split_precovid = 0  # flag indicating whether to split training set (pre-covid data) into train and
@@ -22,11 +22,10 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
 run_make_norm_model = 1
 run_apply_norm_model = 0
 perform_bootstrap = 1
-n_bootstraps = 20
+n_bootstraps = 5
 
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
-# bands = ['theta', 'alpha', 'beta', 'gamma']
-bands = ['theta']
+bands = ['theta', 'alpha', 'beta', 'gamma']
 
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = '/home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling'

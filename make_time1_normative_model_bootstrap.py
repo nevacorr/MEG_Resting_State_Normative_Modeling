@@ -191,7 +191,7 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
                                nm.blr.m[3] * (dummy_cov[index_for_x2, 3] - dummy_cov[index_for_x1, 3])) /
                               (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]))
 
-        model_slope[band].to_csv(f'{working_dir}/{gender}_{band}_allbootstrap_slopes.csv')
+        model_slope[band].to_csv(f'{working_dir}/output_data/{gender}_{band}_allbootstrap_slopes.csv')
 
         # Calculate confidence intervals
         for reg in model_slope[band].columns:
@@ -202,5 +202,5 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
             else:
                 sig.loc[band, reg] = 1
 
-    sig.to_csv(f'{working_dir}/{gender}_significance of slopes by band and region.csv')
+    sig.to_csv(f'{working_dir}/output_data/{gender}_significance of slopes by band and region.csv')
 

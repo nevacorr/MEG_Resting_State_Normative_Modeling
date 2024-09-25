@@ -20,6 +20,7 @@ from create_custom_colormap import create_custom_colormap
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
+save_dir = working_dir + '/plots'
 
 # Set some options
 plot_model = 0
@@ -33,7 +34,7 @@ colormap = create_custom_colormap()
 
 for gender in ['male', 'female']:
 
-    df_sig= pd.read_csv(f'{working_dir}/{gender}_significance of slopes by band and region.csv', index_col=0)
+    df_sig= pd.read_csv(f'{working_dir}/output_data/{gender}_significance of slopes by band and region.csv', index_col=0)
     df_sig = df_sig.astype(int)
 
     bands = df_sig.index.to_list()
@@ -105,11 +106,11 @@ for gender in ['male', 'female']:
                 plt.show()
 
         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(change_dict, working_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+        myggseg.plot_dk(change_dict, save_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
-        with open(f'{working_dir}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+        with open(f'{working_dir}/output_data/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
                   'w') as file:
             for key in change_dict.keys():
                 file.write(f'{key} {change_dict[key]}\n')
