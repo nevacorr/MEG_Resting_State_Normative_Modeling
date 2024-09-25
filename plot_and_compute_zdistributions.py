@@ -230,7 +230,7 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
     regions_reject_f = [roi_id for roi_id, reject_value in zip(roi_ids, reject_f) if reject_value]
     regions_reject_m = [roi_id for roi_id, reject_value in zip(roi_ids, reject_m) if reject_value]
 
-    filepath = working_dir
+    filepath = working_dir + '/output_data'
     if len(regions_reject_f) > 1 :
         write_list_to_file(regions_reject_f, filepath + f'/regions_reject_null_rsMEG_female.csv')
         write_list_to_file(regions_reject_m, filepath + f'/regions_reject_null_rsMEG_male.csv')
