@@ -232,8 +232,8 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
 
     filepath = working_dir
     if len(regions_reject_f) > 1 :
-        write_list_to_file(regions_reject_f, filepath + f'regions_reject_null_rsMEG_female.csv')
-        write_list_to_file(regions_reject_m, filepath + f'regions_reject_null_rsMEG_male.csv')
+        write_list_to_file(regions_reject_f, filepath + f'/regions_reject_null_rsMEG_female.csv')
+        write_list_to_file(regions_reject_m, filepath + f'/regions_reject_null_rsMEG_male.csv')
 
     maxf = Z_female[roi_ids].max(axis=0).max()
     maxm = Z_male[roi_ids].max(axis=0).max()
