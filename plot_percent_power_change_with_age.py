@@ -91,10 +91,6 @@ for gender in ['male', 'female']:
 
             if df_sig.loc[band, region] != 0:
                 change_dict[r] = pchange
-                # if pchange > 0:
-                #     change_dict[r] = 1.0
-                # else:
-                #     change_dict[r] = 0.0
 
             if plot_model:
                 plt.figure()
