@@ -110,12 +110,12 @@ def plot_separate_figures_sorted(df, Z_female, Z_male, binedges, zlim, struct_va
             ptitle = f'{sig_string_list[i]}'
             ptitleB = f'{bold_string_list[i]}'
             one_plot(ax6, ptitle, ptitleB, Z_male[region], Z_female[region], binedges, zlim, yeslegend, nokde)
-            plt.savefig('{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{struct_var}', figstr, f'fig{fignum}'))
+            plt.savefig('{}/plots/{}_{}'.format(working_dir, figstr, f'fig{fignum}'))
             fignum += 1
 
         if i == df.shape[0]-1:
             plt.savefig(
-                '{}/data/{}/plots/{}_{}'.format(working_dir, f'male_{struct_var}', figstr, f'fig{fignum}'))
+                '{}/plots/{}_{}'.format(working_dir, figstr, f'fig{fignum}'))
             fignum += 1
 
         plt.show(block=False)
