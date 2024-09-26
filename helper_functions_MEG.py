@@ -128,10 +128,11 @@ def plot_data_with_spline_one_gender_rescale(gender, datastr, band, cov_file, re
 
     # Create dataframes for plotting with seaborn facetgrid objects
     dummy_cov = np.loadtxt(dummy_cov_file_path)
+
     df_origdata = pd.DataFrame(data=X[:, 0], columns=['Age in Days'])
-    df_origdata[band] = [a * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum + total_reg_num)] for a in y.tolist()]
-    # df_origdata[band] = y.tolist() * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
+    df_origdata[band] = y * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
     df_origdata['Age in Days'] = (df_origdata['Age in Days'] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]) / 365.25
+
     df_estspline = pd.DataFrame(data=dummy_cov[:, 0].tolist(),columns=['Age in Days'])
     df_estspline['Age in Days'] = (df_estspline['Age in Days'] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1] ) / 365.25
     tmp = np.array(yhat_predict_dummy.tolist(), dtype=float)
@@ -157,14 +158,14 @@ def plot_data_with_spline_one_gender_rescale(gender, datastr, band, cov_file, re
         else:
             plt.show()
     else:
-        plt.savefig('{}/data/{}_{}/plots/{}_{}_{}_vs_age_withsplinefit_{}'
-                .format(working_dir, gender, band, gender, band, roi.replace(band+'-', ''), datastr))
-        plt.close(fig)
-    if datastr == 'Training Data':
-        splinemodel_fname = f'{working_dir}/data/{gender}_{band}/plots/spline_model_{datastr}_{roi}_{gender}.csv'
-        origdata_fname = f'{working_dir}/data/{gender}_{band}/plots/datapoints_{datastr}_{roi}_{gender}.csv'
-        df_estspline.to_csv(splinemodel_fname)
-        df_origdata.to_csv(origdata_fname)
+      plt.savefig('{}/data/{}_{}/plots/{}_{}_{}_vs_age_withsplinefit_{}'
+                 .format(working_dir, gender, band, gender, band, roi.replace(band+'-', ''), datastr))
+      plt.close(fig)
+      if datastr == 'Training Data':
+         splinemodel_fname = f'{working_dir}/data/{gender}_{band}/plots/spline_model_{datastr}_{roi}_{gender}.csv'
+         origdata_fname = f'{working_dir}/data/{gender}_{band}/plots/datapoints_{datastr}_{roi}_{gender}.csv'
+         df_estspline.to_csv(splinemodel_fname)
+         df_origdata.to_csv(origdata_fname)
 
 def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, gender, band, roi, Rho, EV, working_dir):
     cov_data = np.loadtxt(cov_file)
