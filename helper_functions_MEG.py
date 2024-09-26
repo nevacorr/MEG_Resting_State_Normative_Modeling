@@ -22,7 +22,6 @@ def write_list_to_file(mylist, filepath):
         for item in mylist:
             file.write(item + "\n")
 
-
 def plot_num_subjs(gender, df, title, struct_var, timept, path):
     sns.set(font_scale=1)
     sns.set_style(style="white")
@@ -115,8 +114,8 @@ def create_dummy_design_matrix_one_gender(band, agemin, agemax, cov_file, spline
     np.savetxt(dummy_cov_file_path, dummy_cov_final)
     return dummy_cov_file_path
 
-def plot_data_with_spline_one_gender(gender, datastr, band, cov_file, resp_file, dummy_cov_file_path, model_dir, roi,
-                                     showplots, working_dir):
+def plot_data_with_spline_one_gender_rescale(gender, datastr, band, cov_file, resp_file, dummy_cov_file_path, model_dir, roi,
+                                     showplots, working_dir, minmax_scaler, regnum, bandnum, total_reg_num):
 
     output = predict(dummy_cov_file_path, respfile=None, alg='blr', model_path=model_dir)
 
@@ -130,12 +129,13 @@ def plot_data_with_spline_one_gender(gender, datastr, band, cov_file, resp_file,
     # Create dataframes for plotting with seaborn facetgrid objects
     dummy_cov = np.loadtxt(dummy_cov_file_path)
     df_origdata = pd.DataFrame(data=X[:, 0], columns=['Age in Days'])
-    df_origdata[band] = y.tolist()
-    df_origdata['Age in Days'] = df_origdata['Age in Days'] / 365.25
+    df_origdata[band] = [a * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum + total_reg_num)] for a in y.tolist()]
+    # df_origdata[band] = y.tolist() * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
+    df_origdata['Age in Days'] = (df_origdata['Age in Days'] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]) / 365.25
     df_estspline = pd.DataFrame(data=dummy_cov[:, 0].tolist(),columns=['Age in Days'])
-    df_estspline['Age in Days'] = df_estspline['Age in Days'] / 365.25
+    df_estspline['Age in Days'] = (df_estspline['Age in Days'] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1] ) / 365.25
     tmp = np.array(yhat_predict_dummy.tolist(), dtype=float)
-    df_estspline[band] = tmp
+    df_estspline[band] = tmp * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
     df_estspline = df_estspline.drop(index=df_estspline.iloc[999].name).reset_index(drop=True)
 
     # PLot figure

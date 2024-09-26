@@ -6,7 +6,7 @@ import shutil
 from sklearn.model_selection import train_test_split
 from pcntoolkit.normative import estimate, evaluate
 from helper_functions_MEG import plot_num_subjs, plot_feature_distributions, makenewdir_deleteold
-from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender
+from helper_functions_MEG import create_design_matrix_one_gender
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
 from helper_functions_MEG import write_ages_to_file_by_gender

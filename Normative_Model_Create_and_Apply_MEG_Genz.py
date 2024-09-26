@@ -11,8 +11,8 @@ from plot_and_compute_zdistributions import plot_and_compute_zcores_by_gender
 from make_time1_normative_model_bootstrap import make_time1_normative_model_bootstrap
 
 struct_var = 'meg'
-show_plots = 0          #set to 1 to show training and test data spline fit plots.
-show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
+show_plots = 1          #set to 1 to show training and test data spline fit plots.
+show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
 perform_train_test_split_precovid = 0  # flag indicating whether to split training set (pre-covid data) into train and
@@ -20,8 +20,8 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
 run_make_norm_model = 1
-run_apply_norm_model = 0
-perform_bootstrap = 1
+run_apply_norm_model = 1
+perform_bootstrap = 0
 n_bootstraps = 5
 
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated

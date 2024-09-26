@@ -47,11 +47,11 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
     if not isempty:
         filename = f'Female Regions with significantly altered power in post-COVID rsMEG {band} band'
         myggseg.plot_dk(female_dict[band], save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
-                      title=f'Female Regions with Significantly Altered Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
+                      title=f'Female Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
     isempty = not bool(male_dict[band])
     if not isempty:
         filename = f'Male Regions with significantly altered power in post-COVID rsMEG {band} band'
         myggseg.plot_dk(male_dict[band], save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
-                      title=f'Male Regions with Significantly Altered Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
+                      title=f'Male Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
 
 mystop=1

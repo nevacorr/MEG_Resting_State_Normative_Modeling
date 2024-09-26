@@ -6,7 +6,7 @@ import shutil
 from sklearn.model_selection import train_test_split
 from pcntoolkit.normative import estimate, evaluate
 from helper_functions_MEG import plot_num_subjs, plot_feature_distributions
-from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender
+from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender_rescale
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
 from helper_functions_MEG import write_ages_to_file_by_gender
@@ -87,7 +87,7 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
     rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays']]
 
     # loop through all power bands separately
-    for band in bands:
+    for bandnum, band in enumerate(bands):
 
         # make directories to store band specific files in
         makenewdir('{}/data/{}_{}'.format(working_dir, gender, band))
@@ -194,7 +194,7 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
 
         # Loop through ROIs
 
-        for roi in roi_ids:
+        for regnum, roi in enumerate(roi_ids):
             print('Running ROI:', roi)
             roi_dir = os.path.join(data_dir, roi)
             model_dir = os.path.join(data_dir, roi, 'Models')
@@ -232,13 +232,14 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
             dummy_cov_file_path = create_dummy_design_matrix_one_gender(band, agemin, agemax,
                                                                 cov_file_tr, spline_order, spline_knots, working_dir)
 
+            total_reg_num = len(roi_ids)
             # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
-            plot_data_with_spline_one_gender(gender, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
-                                  model_dir, roi, show_plots, working_dir)
+            plot_data_with_spline_one_gender_rescale(gender, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
+                                  model_dir, roi, show_plots, working_dir, minmax_scaler, regnum, bandnum, total_reg_num)
 
             # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
-            plot_data_with_spline_one_gender(gender, 'Validation Data', band, cov_file_te, resp_file_te, dummy_cov_file_path,
-                                  model_dir, roi, show_plots, working_dir)
+            plot_data_with_spline_one_gender_rescale(gender, 'Validation Data', band, cov_file_te, resp_file_te, dummy_cov_file_path,
+                                  model_dir, roi, show_plots, working_dir, minmax_scaler, regnum, bandnum, total_reg_num)
 
             # store z score for ROI validation set
             Z_score_test_matrix[roi] = Z_te

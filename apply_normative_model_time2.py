@@ -10,7 +10,7 @@ from matplotlib import pyplot as plt
 from prepare_rsMEG_data import prepare_rsMEG_data
 from helper_functions_MEG import plot_num_subjs
 from helper_functions_MEG import makenewdir, movefiles, create_design_matrix_one_gender
-from helper_functions_MEG import plot_data_with_spline_one_gender, create_dummy_design_matrix_one_gender, read_ages_from_file
+from helper_functions_MEG import plot_data_with_spline_one_gender_rescale, create_dummy_design_matrix_one_gender, read_ages_from_file
 import shutil
 from normative_edited import predict
 from joblib import load
@@ -87,7 +87,7 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
     makenewdir('{}/predict_files/'.format(working_dir))
 
     # loop through each power band separately
-    for band in bands:
+    for bandnum, band in enumerate(bands):
 
         # make file diretories for band-specific output
 
@@ -152,7 +152,7 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
 
         ####Make Predictions of Brain Structural Measures Post-Covid based on Pre-Covid Normative Model
 
-        for roi in roi_ids:
+        for regnum, roi in enumerate(roi_ids):
             print('Running ROI:', roi)
             roi_dir = os.path.join(predict_files_dir, roi)
             model_dir = os.path.join(training_dir, roi, 'Models')
@@ -171,8 +171,10 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
             dummy_cov_file_path= create_dummy_design_matrix_one_gender(band, agemin, agemax,
                                                         cov_file_te, spline_order, spline_knots, working_dir)
 
-            plot_data_with_spline_one_gender(gender, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
-                        dummy_cov_file_path, model_dir, roi, show_plots, working_dir)
+            totalregnum = len(roi_ids)
+
+            plot_data_with_spline_one_gender_rescale(gender, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
+                        dummy_cov_file_path, model_dir, roi, show_plots, working_dir, minmax_scaler, regnum, bandnum, totalregnum)
 
             Z_score_test_matrix[roi] = Z
 
