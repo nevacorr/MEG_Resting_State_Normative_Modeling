@@ -54,4 +54,5 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
         myggseg.plot_dk(male_dict[band], save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
                       title=f'Male Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
 
+plt.show()
 mystop=1
