@@ -22,6 +22,8 @@ Z_time2_CT = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_tests
 correlation_df = pd.DataFrame(columns=bands)
 pval_df = pd.DataFrame(columns=bands)
 
+palette = {1: 'blue', 0: 'crimson'}
+
 for band in bands:
     Z_time2_MEG_male = pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
                                .format(working_dir, 'male', band))
@@ -38,6 +40,8 @@ for band in bands:
     Z_time2_CT_and_MEG = pd.merge(Z_time2_CT, Z_time2_MEG, how='inner', on='participant_id')
 
     Z_time2_CT_and_MEG['gender'] = [1 if id % 2 == 1 else 0 for id in Z_time2_CT_and_MEG['participant_id']]
+
+    Z_time2_CT_and_MEG = Z_time2_CT_and_MEG[Z_time2_CT_and_MEG['gender']==0]
 
     colnames = Z_time2_MEG.columns.to_list()
     colnames.remove('participant_id')
@@ -61,9 +65,12 @@ for band in bands:
 
         if pval <0.05:
             plt.figure()
-            sns.regplot(x=Z_time2_CT_and_MEG.iloc[:, ct_colnumber], y=Z_time2_CT_and_MEG.iloc[:, meg_colnumber],  ci=None)
+            sns.regplot(x=Z_time2_CT_and_MEG.iloc[:, ct_colnumber], y=Z_time2_CT_and_MEG.iloc[:, meg_colnumber],  color='gray', scatter_kws={'color': 'gray'}, ci=None)
+            sns.scatterplot(x=Z_time2_CT_and_MEG.columns[ct_colnumber], y=Z_time2_CT_and_MEG.columns[meg_colnumber],
+                            hue='gender', data=Z_time2_CT_and_MEG, palette=palette)
             plt.title(f'Z-score for MEG Power in {capitalize(band)} band vs.\n Z-score for Cortical Thickness in\n {c} r={rval:.2f} uncorrp={pval:.3f}')
             plt.tight_layout()
+            plt.savefig(f'{working_dir}/plots/MEG_Zscores_{band}_band_vs_CT_Zscores_{c}.png')
             plt.show(block=False)
 
 correlation_df = correlation_df.astype(float)
@@ -72,12 +79,13 @@ plt.figure(figsize=(12, 15))
 
 plt.imshow(correlation_df, cmap ="RdYlBu", aspect= "auto")
 plt.colorbar()
-plt.title('Uncorrected Pearson Correlation between Cortical Thickness Z-score and rsMEG Power Z-score')
+plt.title('Females Only\nPearson Correlation between Cortical Thickness Z-score and rsMEG Power Z-score')
 plt.xticks(range(correlation_df.shape[1]), correlation_df.columns)
 plt.yticks(range(correlation_df.shape[0]), correlation_df.index)
 plt.xlabel('rsMEG Power Band')
 plt.ylabel('Brain Region')
 plt.tight_layout()
 plt.show(block=False)
+
 
 mystop = 1
