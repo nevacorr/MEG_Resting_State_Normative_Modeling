@@ -48,10 +48,10 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
     rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
 
     region_dict={
-        'frontal_reg': frontal_reg,
-        'pareital_reg': parietal_reg,
-        'temporal_reg': temporal_reg,
-        'occipital_reg': occipital_reg
+        'frontal': frontal_reg,
+        'parietal': parietal_reg,
+        'temporal': temporal_reg,
+        'occipital': occipital_reg
     }
 
     results_df = pd.DataFrame(index=rsd_v1.index)
@@ -67,6 +67,12 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
                 if cols_to_avg:
                     # Average the values aross columns in the region
                     results_df[f'{band}_{region_name}{hemi}'] = rsd_v1[cols_to_avg].mean(axis=1)
+
+    # Merge the new averaged columns with the original dataframe
+    # This will overwrite the matching columns but keep the other columns unchanged
+    rsd_v1 = rsd_v1.drop(columns=[col for col in rsd_v1.columns if
+                          any(band in col for band in bands)])  # Remove original band-region columns
+    rsd_v1 = pd.concat([rsd_v1, results_df], axis=1)
 
     # Scale non-categorical covariate and response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
