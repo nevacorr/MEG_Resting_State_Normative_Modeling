@@ -44,8 +44,11 @@ for gender in ['male', 'female']:
         model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
 
         # Get a list of all region names by listing directories in model folder
-        all_regions = [d for d in os.listdir(model_dir_path)
-                       if os.path.isdir(os.path.join(model_dir_path, d))]
+        # all_regions = [d for d in os.listdir(model_dir_path)
+        #                if os.path.isdir(os.path.join(model_dir_path, d))]
+
+        all_regions = ['frontal-lh', 'frontal-rh', 'occipital-lh', 'occipital-rh', 'parietal-lh', 'parietal-rh',
+                       'temporal-lh', 'temporal-rh']
         all_regions.sort()
         total_reg_num = len(all_regions)
 
@@ -116,6 +119,6 @@ for gender in ['male', 'female']:
             for key in change_dict.keys():
                 file.write(f'{key} {change_dict[key]}\n')
 
-mystop=1
+plt.show()
 
 
