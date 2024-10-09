@@ -10,14 +10,57 @@ from numpy.core.defchararray import capitalize
 from scipy.stats import pearsonr
 import numpy as np
 
+lobes_only=1
 bands = ['theta', 'alpha', 'beta', 'gamma']
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 working_dir = os.getcwd()
+
+frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
+               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
+               'frontalpole',
+               'rostralanteriorcingulate', 'caudalanteriorcingulate']
+
+parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
+                'posteriorcingulate',
+                'isthmuscingulate']
+
+temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
+                'entorhinal', 'temporalpole', 'parahippocampal']
+
+occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
 Z_MEG_time2 = {}
 
 Z_time2_CT = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
                          .format(ct_data_dir, 'cortthick'))
+
+# Average Z-scores for regions in each lobe
+
+region_dict = {
+    'frontal': frontal_reg,
+    'parietal': parietal_reg,
+    'temporal': temporal_reg,
+    'occipital': occipital_reg
+}
+
+Z2_CT_avgreg = pd.DataFrame(index=Z_time2_CT.index)
+
+hemispheres = ['-lh', '-rh']
+
+for region_name, regions in region_dict.items():
+    for hemi in hemispheres:
+        # Create a pattern to match the columns of interest
+        cols_to_avg = [col for col in Z_time2_CT.columns if any(f'cortthick{hemi}-{region}' in col for region in regions)]
+
+        if cols_to_avg:
+            # Average the values across columns in the region
+            Z2_CT_avgreg[f'cortthick-{region_name}{hemi}'] = Z_time2_CT[cols_to_avg].mean(axis=1)
+
+# Merge the new averaged columns with the original dataframe
+# This will overwrite the matching columns but keep the other columns unchanged
+Z_time2_CT = Z_time2_CT.drop(columns=[col for col in Z_time2_CT.columns if 'cortthick' in col]) # Remove original region columns
+
+Z_time2_CT = pd.concat([Z_time2_CT, Z2_CT_avgreg], axis=1)
 
 correlation_df = pd.DataFrame(columns=bands)
 pval_df = pd.DataFrame(columns=bands)
