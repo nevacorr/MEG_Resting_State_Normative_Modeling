@@ -68,6 +68,13 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
                     # Average the values across columns in the region
                     results_df[f'{band}_{region_name}{hemi}'] = rsd_v2[cols_to_avg].mean(axis=1)
 
+    # Merge the new averaged columns with the original dataframe
+    # This will overwrite the matching columns but keep the other columns unchanged
+    rsd_v2 = rsd_v2.drop(columns=[col for col in rsd_v2.columns if
+                          any(band in col for band in bands)])  # Remove original band-region columns
+    rsd_v2 = pd.concat([rsd_v2, results_df], axis=1)
+
+
     # Scale non-categorical covariate and response variables using same scaling a time 1 data
     cols_to_eval = [col for col in rsd_v2.columns if '-lh' in col or '-rh' in col]
     cols_to_eval.append('agedays')
