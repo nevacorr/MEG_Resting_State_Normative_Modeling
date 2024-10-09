@@ -84,6 +84,7 @@ for band in bands:
 
     Z_time2_CT_and_MEG['gender'] = [1 if id % 2 == 1 else 0 for id in Z_time2_CT_and_MEG['participant_id']]
 
+    # Keep only female data
     Z_time2_CT_and_MEG = Z_time2_CT_and_MEG[Z_time2_CT_and_MEG['gender']==0]
 
     colnames = Z_time2_MEG.columns.to_list()
@@ -92,7 +93,7 @@ for band in bands:
     pearson_corr = {}
     for c in colnames:
         strs = c.split('-')
-        ct_col_str = 'cortthick-' + strs[1] + '-' + strs[0]
+        ct_col_str = 'cortthick-' + strs[0] + '-' + strs[1]
         ct_colnumber = Z_time2_CT_and_MEG.columns.get_loc(ct_col_str)
         meg_colnumber = Z_time2_CT_and_MEG.columns.get_loc(c)
 
