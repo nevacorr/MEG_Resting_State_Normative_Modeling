@@ -23,10 +23,25 @@ working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
 
 # Set some options
-plot_model = 0
+lobes_only = 1
+plot_model = 1
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
+
+frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
+               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
+               'frontalpole',
+               'rostralanteriorcingulate', 'caudalanteriorcingulate']
+
+parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
+                'posteriorcingulate',
+                'isthmuscingulate']
+
+temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
+                'entorhinal', 'temporalpole', 'parahippocampal']
+
+occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
 minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
 
@@ -44,11 +59,12 @@ for gender in ['male', 'female']:
         model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
 
         # Get a list of all region names by listing directories in model folder
-        # all_regions = [d for d in os.listdir(model_dir_path)
-        #                if os.path.isdir(os.path.join(model_dir_path, d))]
-
-        all_regions = ['frontal-lh', 'frontal-rh', 'occipital-lh', 'occipital-rh', 'parietal-lh', 'parietal-rh',
+        if lobes_only:
+            all_regions = ['frontal-lh', 'frontal-rh', 'occipital-lh', 'occipital-rh', 'parietal-lh', 'parietal-rh',
                        'temporal-lh', 'temporal-rh']
+        else:
+            all_regions = [d for d in os.listdir(model_dir_path)
+                           if os.path.isdir(os.path.join(model_dir_path, d))]
         all_regions.sort()
         total_reg_num = len(all_regions)
 
@@ -109,8 +125,40 @@ for gender in ['male', 'female']:
                 plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
                 plt.show()
 
+        if lobes_only:
+            lobe_dict = {}
+            if 'frontal_left' in change_dict:
+                    for reg in frontal_reg:
+                        lobe_dict[f'{reg}_left'] = change_dict['frontal_left']
+            if 'frontal_right' in change_dict:
+                    for reg in frontal_reg:
+                        lobe_dict[f'{reg}_right'] = change_dict['frontal_right']
+            if 'temporal_left' in change_dict:
+                    for reg in temporal_reg:
+                        lobe_dict[f'{reg}_left'] = change_dict['temporal_left']
+            if 'temporal_right' in change_dict:
+                    for reg in temporal_reg:
+                        lobe_dict[f'{reg}_right'] = change_dict['temporal_right']
+            if 'parietal_left' in change_dict:
+                    for reg in parietal_reg:
+                        lobe_dict[f'{reg}_left'] = change_dict['parietal_left']
+            if 'parietal_right' in change_dict:
+                    for reg in parietal_reg:
+                        lobe_dict[f'{reg}_right'] = change_dict['parietal_right']
+            if 'occipital_left' in change_dict:
+                    for reg in occipital_reg:
+                        lobe_dict[f'{reg}_left'] = change_dict['occipital_left']
+            if 'occipital_right' in change_dict:
+                    for reg in occipital_reg:
+                        lobe_dict[f'{reg}_right'] = change_dict['occipital_right']
+
+        if lobes_only:
+            dict_to_plot = lobe_dict.copy()
+        else:
+            dict_to_plot = change_dict.copy()
+
         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(change_dict, save_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
@@ -120,5 +168,5 @@ for gender in ['male', 'female']:
                 file.write(f'{key} {change_dict[key]}\n')
 
 plt.show()
-
+mystop=1
 
