@@ -21,6 +21,18 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
 
+    frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
+                   'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral', 'frontalpole',
+                   'rostralanteriorcingulate', 'caudalanteriorcingulate']
+
+    parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus', 'posteriorcingulate',
+                    'isthmuscingulate']
+
+    temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
+                    'entorhinal', 'temporalpole', 'parahippocampal']
+
+    occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
+
     if gender == 'male':
         # keep only data for males
         rsd_v2 = rsd_v2.loc[rsd_v2['gender'] == 1]
@@ -33,6 +45,28 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
 
     # Remove the prefix 't2_' from column names
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
+
+    region_dict = {
+        'frontal': frontal_reg,
+        'parietal': parietal_reg,
+        'temporal': temporal_reg,
+        'occipital': occipital_reg
+    }
+
+    results_df = pd.DataFrame(index=rsd_v2.index)
+
+    hemispheres = ['-lh', '-rh']
+
+    for band in bands:
+        for region_name, regions in region_dict.items():
+            for hemi in hemispheres:
+                # Create a pattern to match the columns of interest
+                cols_to_avg = [col for col in rsd_v2.columns if
+                               any(f'{band}_{region}{hemi}' in col for region in regions)]
+
+                if cols_to_avg:
+                    # Average the values across columns in the region
+                    results_df[f'{band}_{region_name}{hemi}'] = rsd_v2[cols_to_avg].mean(axis=1)
 
     # Scale non-categorical covariate and response variables using same scaling a time 1 data
     cols_to_eval = [col for col in rsd_v2.columns if '-lh' in col or '-rh' in col]
