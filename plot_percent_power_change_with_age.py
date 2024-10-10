@@ -24,19 +24,17 @@ save_dir = working_dir + '/plots'
 
 # Set some options
 lobes_only = 1
-plot_model = 1
+plot_model = 0
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
 
 frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
                'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
-               'frontalpole',
-               'rostralanteriorcingulate', 'caudalanteriorcingulate']
+               'frontalpole','rostralanteriorcingulate', 'caudalanteriorcingulate']
 
 parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
-                'posteriorcingulate',
-                'isthmuscingulate']
+                'posteriorcingulate','isthmuscingulate']
 
 temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
                 'entorhinal', 'temporalpole', 'parahippocampal']
@@ -158,7 +156,7 @@ for gender in ['male', 'female']:
             dict_to_plot = change_dict.copy()
 
         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap='jet', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap='plasma', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
