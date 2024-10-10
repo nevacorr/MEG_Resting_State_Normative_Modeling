@@ -16,22 +16,10 @@ from normative_edited import predict
 from joblib import load
 
 def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir, MEG_filename, ct_data_dir, subjects_to_exclude, bands):
+                                working_dir, MEG_filename, ct_data_dir, subjects_to_exclude, bands, lobes_only):
 
     # load all rs MEG data
     rsd_v1, rsd_v2 = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
-
-    frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-                   'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral', 'frontalpole',
-                   'rostralanteriorcingulate', 'caudalanteriorcingulate']
-
-    parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus', 'posteriorcingulate',
-                    'isthmuscingulate']
-
-    temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
-                    'entorhinal', 'temporalpole', 'parahippocampal']
-
-    occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
     if gender == 'male':
         # keep only data for males
@@ -46,33 +34,51 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
     # Remove the prefix 't2_' from column names
     rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
-    region_dict = {
-        'frontal': frontal_reg,
-        'parietal': parietal_reg,
-        'temporal': temporal_reg,
-        'occipital': occipital_reg
-    }
+    if lobes_only:
+        #Average values for all regions within each lobe
+        frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis',
+                       'parstriangularis',
+                       'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
+                       'frontalpole',
+                       'rostralanteriorcingulate', 'caudalanteriorcingulate']
 
-    results_df = pd.DataFrame(index=rsd_v2.index)
+        parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
+                        'posteriorcingulate',
+                        'isthmuscingulate']
 
-    hemispheres = ['-lh', '-rh']
+        temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform',
+                        'transversetemporal',
+                        'entorhinal', 'temporalpole', 'parahippocampal']
 
-    for band in bands:
-        for region_name, regions in region_dict.items():
-            for hemi in hemispheres:
-                # Create a pattern to match the columns of interest
-                cols_to_avg = [col for col in rsd_v2.columns if
-                               any(f'{band}_{region}{hemi}' in col for region in regions)]
+        occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
-                if cols_to_avg:
-                    # Average the values across columns in the region
-                    results_df[f'{band}_{region_name}{hemi}'] = rsd_v2[cols_to_avg].mean(axis=1)
+        region_dict = {
+            'frontal': frontal_reg,
+            'parietal': parietal_reg,
+            'temporal': temporal_reg,
+            'occipital': occipital_reg
+        }
 
-    # Merge the new averaged columns with the original dataframe
-    # This will overwrite the matching columns but keep the other columns unchanged
-    rsd_v2 = rsd_v2.drop(columns=[col for col in rsd_v2.columns if
-                          any(band in col for band in bands)])  # Remove original band-region columns
-    rsd_v2 = pd.concat([rsd_v2, results_df], axis=1)
+        results_df = pd.DataFrame(index=rsd_v2.index)
+
+        hemispheres = ['-lh', '-rh']
+
+        for band in bands:
+            for region_name, regions in region_dict.items():
+                for hemi in hemispheres:
+                    # Create a pattern to match the columns of interest
+                    cols_to_avg = [col for col in rsd_v2.columns if
+                                   any(f'{band}_{region}{hemi}' in col for region in regions)]
+
+                    if cols_to_avg:
+                        # Average the values across columns in the region
+                        results_df[f'{band}_{region_name}{hemi}'] = rsd_v2[cols_to_avg].mean(axis=1)
+
+        # Merge the new averaged columns with the original dataframe
+        # This will overwrite the matching columns but keep the other columns unchanged
+        rsd_v2 = rsd_v2.drop(columns=[col for col in rsd_v2.columns if
+                              any(band in col for band in bands)])  # Remove original band-region columns
+        rsd_v2 = pd.concat([rsd_v2, results_df], axis=1)
 
 
     # Scale non-categorical covariate and response variables using same scaling a time 1 data

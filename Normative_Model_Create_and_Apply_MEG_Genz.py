@@ -19,10 +19,11 @@ perform_train_test_split_precovid = 0  # flag indicating whether to split traini
                                        # validations (test) sets. If this is set to 0, the entire training set is used
                                        # for the model and there is no validation set. Regardless of the value of this
                                        # flag, no post-covid data is used in creating or evaluating the normative model.
-run_make_norm_model = 1
+run_make_norm_model = 0
 run_apply_norm_model = 1
 perform_bootstrap = 0
-n_bootstraps = 5
+n_bootstraps = 100
+lobes_only = 0
 
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
 bands = ['theta', 'alpha', 'beta', 'gamma']
@@ -39,19 +40,19 @@ for gender in ['male', 'female']:
 
         Z_time1[gender], rsd_v1 = make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                    perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
-                                   subjects_to_exclude, bands)
+                                   subjects_to_exclude, bands, lobes_only)
 
         Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
 
         if perform_bootstrap == 1:
 
             make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
-                                                         working_dir, bands, n_bootstraps)
+                                                         working_dir, bands, n_bootstraps, lobes_only)
 
     if run_apply_norm_model:
 
         Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                    working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands)
+                                    working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands, lobes_only)
 
 if run_apply_norm_model:
 
