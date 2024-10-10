@@ -16,15 +16,15 @@ from matplotlib.colors import Normalize, ListedColormap
 from scipy.stats import pearsonr
 from scipy import stats
 from create_custom_colormap import create_custom_colormap
+from bipolar import hotcold
 
+# Set options
+lobes_only = 1
+plot_model = 0
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
-
-# Set some options
-lobes_only = 1
-plot_model = 0
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
@@ -155,8 +155,10 @@ for gender in ['male', 'female']:
         else:
             dict_to_plot = change_dict.copy()
 
+        cmap = hotcold(neutral=0.0)
+
         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap='plasma', background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
