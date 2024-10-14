@@ -15,12 +15,12 @@ from matplotlib import pyplot as plt
 from matplotlib.colors import Normalize, ListedColormap
 from scipy.stats import pearsonr
 from scipy import stats
-from create_custom_colormap import create_custom_colormap
+# from create_custom_colormap import create_custom_colormap
 from bipolar import hotcold
 
 # Set options
-lobes_only = 1
-plot_model = 0
+lobes_only = 0
+plot_model = 1
 
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
@@ -43,7 +43,7 @@ occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
 minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
 
-colormap = create_custom_colormap()
+# colormap = create_custom_colormap()
 
 for gender in ['male', 'female']:
 
@@ -61,8 +61,7 @@ for gender in ['male', 'female']:
             all_regions = ['frontal-lh', 'frontal-rh', 'occipital-lh', 'occipital-rh', 'parietal-lh', 'parietal-rh',
                        'temporal-lh', 'temporal-rh']
         else:
-            all_regions = [d for d in os.listdir(model_dir_path)
-                           if os.path.isdir(os.path.join(model_dir_path, d))]
+            all_regions = df_sig.columns.tolist()
         all_regions.sort()
         total_reg_num = len(all_regions)
 
