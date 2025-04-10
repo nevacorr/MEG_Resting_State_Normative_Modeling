@@ -7,8 +7,8 @@ from sklearn.model_selection import train_test_split
 from pcntoolkit.normative import estimate, evaluate
 from helper_functions_MEG import plot_num_subjs, plot_feature_distributions
 from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender_rescale
-from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR
-from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
+from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR, recreate_folder
+from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles
 from helper_functions_MEG import write_ages_to_file_by_gender
 from prepare_rsMEG_data import prepare_rsMEG_data
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -89,7 +89,7 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
     dump(minmax_scaler, f'{working_dir}/minmax_scaler_{gender}.bin', compress=True)
 
     # make directories to store files in
-    makenewdir('{}/data/'.format(working_dir))
+    recreate_folder(os.path.join(working_dir, 'data'))
 
      # show bar plots with number of subjects per age group in pre-COVID data
     if gender == "female":
@@ -136,11 +136,11 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
     for bandnum, band in enumerate(bands):
 
         # make directories to store band specific files in
-        makenewdir('{}/data/{}_{}'.format(working_dir, gender, band))
-        makenewdir('{}/data/{}_{}/plots'.format(working_dir, gender, band))
-        makenewdir('{}/data/{}_{}/ROI_models'.format(working_dir, gender, band))
-        makenewdir('{}/data/{}_{}/covariate_files'.format(working_dir, gender, band))
-        makenewdir('{}/data/{}_{}/response_files'.format(working_dir, gender, band))
+        recreate_folder(os.path.join(working_dir, f'{gender}_{band}'))
+        recreate_folder(os.path.join(working_dir, f'{gender}_{band}','plots'))
+        recreate_folder(os.path.join(working_dir, f'{gender}_{band}', 'ROI_models'))
+        recreate_folder(os.path.join(working_dir, f'{gender}_{band}', 'covariate_files'))
+        recreate_folder(os.path.join(working_dir, f'{gender}_{band}', 'response_files'))
 
         rscols_band = [item for item in rscols if band in item]
 
@@ -197,7 +197,7 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
 
         for i in roi_ids:
             roidirname = '{}/data/{}_{}/ROI_models/{}'.format(working_dir, gender, band, i)
-            makenewdir(roidirname)
+            recreate_folder(roidirname)
             resp_tr_filename = "{}/resp_tr_{}_{}_{}.txt".format(working_dir, gender, band, i)
             resp_tr_filepath = roidirname + '/resp_tr.txt'
             shutil.copyfile(resp_tr_filename, resp_tr_filepath)

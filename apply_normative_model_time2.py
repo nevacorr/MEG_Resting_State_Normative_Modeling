@@ -9,7 +9,7 @@ import pandas as pd
 from matplotlib import pyplot as plt
 from prepare_rsMEG_data import prepare_rsMEG_data
 from helper_functions_MEG import plot_num_subjs
-from helper_functions_MEG import makenewdir, movefiles, create_design_matrix_one_gender
+from helper_functions_MEG import recreate_folder, movefiles, create_design_matrix_one_gender, recreate_folder
 from helper_functions_MEG import plot_data_with_spline_one_gender_rescale, create_dummy_design_matrix_one_gender, read_ages_from_file
 import shutil
 from normative_edited import predict
@@ -131,18 +131,18 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
     rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays']]
 
     # make file diretories for output
-    makenewdir('{}/predict_files/'.format(working_dir))
+    recreate_folder('{}/predict_files/'.format(working_dir))
 
     # loop through each power band separately
     for bandnum, band in enumerate(bands):
 
         # make file diretories for band-specific output
 
-        makenewdir('{}/predict_files/{}_{}'.format(working_dir, gender, band))
-        makenewdir('{}/predict_files/{}_{}/plots'.format(working_dir, gender, band))
-        makenewdir('{}/predict_files/{}_{}/ROI_models'.format(working_dir, gender, band))
-        makenewdir('{}/predict_files/{}_{}/covariate_files'.format(working_dir, gender, band))
-        makenewdir('{}/predict_files/{}_{}/response_files'.format(working_dir, gender, band))
+        recreate_folder('{}/predict_files/{}_{}'.format(working_dir, gender, band))
+        recreate_folder('{}/predict_files/{}_{}/plots'.format(working_dir, gender, band))
+        recreate_folder('{}/predict_files/{}_{}/ROI_models'.format(working_dir, gender, band))
+        recreate_folder('{}/predict_files/{}_{}/covariate_files'.format(working_dir, gender, band))
+        recreate_folder('{}/predict_files/{}_{}/response_files'.format(working_dir, gender, band))
 
         rscols_band = [item for item in rscols if band in item]
 
@@ -172,7 +172,7 @@ def apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_pl
 
         for i in roi_ids:
             roidirname = '{}/predict_files/{}_{}/ROI_models/{}'.format(working_dir, gender, band, i)
-            makenewdir(roidirname)
+            recreate_folder(roidirname)
             resp_te_filename = "{}/resp_te_{}_{}_{}.txt".format(working_dir, gender, band, i)
             resp_te_filepath = roidirname + '/resp_te.txt'
             shutil.copyfile(resp_te_filename, resp_te_filepath)

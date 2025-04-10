@@ -40,21 +40,6 @@ def plot_num_subjs(gender, df, title, struct_var, timept, path):
     plt.show(block=False)
     plt.savefig("{}/data/{}_NumSubjects_{}".format(path, struct_var, timept))
 
-
-def makenewdir(path):
-    isExist = os.path.exists(path)
-    if isExist is False:
-        os.mkdir(path)
-        print("made directory {}".format(path))
-
-def makenewdir_deleteold(path):
-    isExist = os.path.exists(path)
-    if isExist is True:
-        shutil.rmtree(path)
-    os.mkdir(path)
-    print("made directory {}". format(path))
-
-
 def movefiles(pattern, folder):
     files = glob.glob(pattern)
     for file in files:
@@ -284,6 +269,12 @@ def read_text_list(filename):
         lines = file.readlines()
     mylist = [line.strip() for line in lines]
     return mylist
+
+def recreate_folder(folder_path):
+    if os.path.exists(folder_path):
+        shutil.rmtree(folder_path)  # Delete the folder and its contents
+    os.makedirs(folder_path)         # Create the folder (again or for the first time)
+    print("made directory {}".format(folder_path))
 
 
 # def plot_scatter_with_trendline_corthick_MEGrs_byreg(df, band, cortthick_cols, band_cols, cortthick_str_to_remove, band_str_to_remove, mycolor):

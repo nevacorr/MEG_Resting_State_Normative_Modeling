@@ -5,10 +5,10 @@ import os
 import shutil
 from sklearn.model_selection import train_test_split
 from pcntoolkit.normative import estimate, evaluate
-from helper_functions_MEG import plot_num_subjs, plot_feature_distributions, makenewdir_deleteold
-from helper_functions_MEG import create_design_matrix_one_gender
+from helper_functions_MEG import plot_num_subjs, plot_feature_distributions
+from helper_functions_MEG import create_design_matrix_one_gender, recreate_folder
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR
-from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, makenewdir, movefiles
+from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles
 from helper_functions_MEG import write_ages_to_file_by_gender
 from prepare_rsMEG_data import prepare_rsMEG_data
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
@@ -18,7 +18,7 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
                                working_dir, bands, n_bootstraps):
 
     # make directories to store files in
-    makenewdir('{}/data_bootstrap/'.format(working_dir))
+    recreate_folder('{}/data_bootstrap/'.format(working_dir))
 
     # identify age range in pre-COVID data to be used for modeling
     agemin =rsd_v1['agedays'].min()
@@ -47,11 +47,11 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
             rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays']]
 
             # make directories to store band specific files in
-            makenewdir_deleteold('{}/data_bootstrap/{}_{}'.format(working_dir, gender, band))
-            makenewdir_deleteold('{}/data_bootstrap/{}_{}/plots'.format(working_dir, gender, band))
-            makenewdir_deleteold('{}/data_bootstrap/{}_{}/ROI_models'.format(working_dir, gender, band))
-            makenewdir_deleteold('{}/data_bootstrap/{}_{}/covariate_files'.format(working_dir, gender, band))
-            makenewdir_deleteold('{}/data_bootstrap/{}_{}/response_files'.format(working_dir, gender, band))
+            recreate_folder('{}/data_bootstrap/{}_{}'.format(working_dir, gender, band))
+            recreate_folder('{}/data_bootstrap/{}_{}/plots'.format(working_dir, gender, band))
+            recreate_folder('{}/data_bootstrap/{}_{}/ROI_models'.format(working_dir, gender, band))
+            recreate_folder('{}/data_bootstrap/{}_{}/covariate_files'.format(working_dir, gender, band))
+            recreate_folder('{}/data_bootstrap/{}_{}/response_files'.format(working_dir, gender, band))
 
             rscols_band = [item for item in rscols if band in item]
 
@@ -108,7 +108,7 @@ def make_time1_normative_model_bootstrap(rsd_v1, gender, spline_order, spline_kn
 
             for i in roi_ids:
                 roidirname = '{}/data_bootstrap/{}_{}/ROI_models/{}'.format(working_dir, gender, band, i)
-                makenewdir(roidirname)
+                recreate_folder(roidirname)
                 resp_tr_filename = "{}/resp_tr_{}_{}_{}.txt".format(working_dir, gender, band, i)
                 resp_tr_filepath = roidirname + '/resp_tr.txt'
                 shutil.copyfile(resp_tr_filename, resp_tr_filepath)
