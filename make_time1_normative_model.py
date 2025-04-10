@@ -80,13 +80,10 @@ def make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plo
                               any(band in col for band in bands)])  # Remove original band-region columns
         rsd_v1 = pd.concat([rsd_v1, results_df], axis=1)
 
-    # Scale non-categorical covariate and response variables
+    # Scale response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
-    cols_to_eval.append('agedays')
-    minmax_scaler = MinMaxScaler()
-    minmax_scaler.fit(rsd_v1[cols_to_eval])
-    rsd_v1[cols_to_eval] = minmax_scaler.transform(rsd_v1[cols_to_eval])
-    dump(minmax_scaler, f'{working_dir}/minmax_scaler_{gender}.bin', compress=True)
+    # Multiply the specified columns by 100
+    rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
 
     # make directories to store files in
     recreate_folder(os.path.join(working_dir, 'data'))
