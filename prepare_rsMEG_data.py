@@ -92,4 +92,23 @@ def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
     # Insert gender column for visit 2 to thir column in v2 dataframe
     rsd_v2.insert(3, "gender", gendercol)
 
-    return (rsd_v1, rsd_v2)
+    # Make lists of subjects with data only at timepoint 1, subjects with data at only timepoint 2, and all subjects in dataset
+    # Make a dataframe with visit and subject data from both visits
+    # Add a 'visit' column to each DataFrame (without altering the original ones)
+    rsd_v1_with_visit = rsd_v1[['subject']].copy()
+    rsd_v1_with_visit['visit'] = 1
+    rsd_v2_with_visit = rsd_v2[['subject']].copy()
+    rsd_v2_with_visit['visit'] = 2
+    # Concatenate them
+    rsd_allvisits = pd.concat([rsd_v1_with_visit, rsd_v2_with_visit], ignore_index=True)
+    all_subjects =rsd_allvisits['subject'].unique().tolist()
+
+    unique_subjects = rsd_allvisits['subject'].value_counts()
+    unique_subjects = unique_subjects[unique_subjects == 1].index
+    subjects_with_one_dataset = rsd_allvisits[rsd_allvisits['subject'].isin(unique_subjects)]
+    subjects_visit1_data_only = subjects_with_one_dataset[subjects_with_one_dataset['visit'] == 1]
+    subjects_visit2_data_only = subjects_with_one_dataset[subjects_with_one_dataset['visit'] == 2]
+    subjects_v1_only = subjects_visit1_data_only['subject'].tolist()
+    subjects_v2_only = subjects_visit2_data_only['subject'].tolist()
+
+    return (rsd_v1, rsd_v2, all_subjects, subjects_v1_only, subjects_v2_only)
