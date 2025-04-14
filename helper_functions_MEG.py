@@ -38,7 +38,7 @@ def plot_num_subjs(gender, df, title, struct_var, timept, path):
     g.ax.tick_params(axis="y", labelsize=8)
     g.ax.set(yticks=(np.arange(0, 20, 2)))
     plt.show(block=False)
-    plt.savefig("{}/data/{}_NumSubjects_{}".format(path, struct_var, timept))
+    plt.savefig(f"{path}/{struct_var}_NumSubjects_{timept}")
 
 def movefiles(pattern, folder):
     files = glob.glob(pattern)
