@@ -10,6 +10,7 @@ import numpy as np
 import seaborn as sns
 import scipy.stats as stats
 import math
+import os
 from helper_functions_MEG import write_list_to_file
 
 def one_plot(ax, ptitle, ptitleB, Z_male_region, Z_female_region, binedges, zlim, yeslegend, nokde):
@@ -163,32 +164,35 @@ def plot_by_gender_no_kde(Z_female, Z_male, roi_ids, reject_f, reject_m, pvals_c
 def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
 
     #get list of all brain regions
-    sinfo = ['participant_id', 'gender']
-    roi_ids_orig = [col for col in Z_timepoint2['male_theta'].columns if col not in sinfo]
+    sinfo = ['subject_id_test']
+    roi_ids_orig = [col for col in Z_timepoint2['male']['theta'].columns if col not in sinfo]
 
     Z_male_orig = {}
-    Z_male_orig['theta'] = Z_timepoint2['male_theta'].copy()
-    Z_male_orig['alpha'] = Z_timepoint2['male_alpha'].copy()
-    Z_male_orig['beta'] = Z_timepoint2['male_beta'].copy()
-    Z_male_orig['gamma'] = Z_timepoint2['male_gamma'].copy()
-
     Z_female_orig = {}
-    Z_female_orig['theta'] = Z_timepoint2['female_theta'].copy()
-    Z_female_orig['alpha'] = Z_timepoint2['female_alpha'].copy()
-    Z_female_orig['beta'] = Z_timepoint2['female_beta'].copy()
-    Z_female_orig['gamma'] = Z_timepoint2['female_gamma'].copy()
+    for band in bands:
+        Z_male_orig[band] = Z_timepoint2['male'][band].copy()
+        Z_female_orig[band] = Z_timepoint2['female'][band].copy()
+        Z_timepoint2['male'][band].rename(columns={c: c + '_' + band for c in Z_timepoint2['male'][band].columns if c not in ['subject_id_test']}, inplace=True)
+        Z_timepoint2['female'][band].rename(columns={c: c + '_' + band for c in Z_timepoint2['female'][band].columns if c not in ['subject_id_test']}, inplace=True)
 
-    Z_timepoint2['male_theta'].rename(columns={c: c + '_theta' for c in Z_timepoint2['male_theta'].columns if c not in ['participant_id']}, inplace=True)
-    Z_timepoint2['male_alpha'].rename(columns={c: c + '_alpha' for c in Z_timepoint2['male_alpha'].columns if c not in ['participant_id']}, inplace=True)
-    Z_timepoint2['male_beta'].rename(columns={c: c + '_beta' for c in Z_timepoint2['male_beta'].columns if c not in ['participant_id']}, inplace=True)
-    Z_timepoint2['male_gamma'].rename(columns={c: c + '_gamma' for c in Z_timepoint2['male_gamma'].columns if c not in ['participant_id']}, inplace=True)
-    Z_male = pd.concat([Z_timepoint2['male_theta'], Z_timepoint2['male_alpha'], Z_timepoint2['male_beta'], Z_timepoint2['male_gamma']], axis=1)
+    # Extract 'subject_id_test' from any one of them (they should all be the same)
+    subject_ids_male = Z_timepoint2['male']['theta'][['subject_id_test']]
+    subject_ids_female = Z_timepoint2['female']['theta'][['subject_id_test']]
 
-    Z_timepoint2['female_theta'].rename(columns={c: c + '_theta' for c in Z_timepoint2['female_theta'].columns if c not in ['participant_id']},inplace=True)
-    Z_timepoint2['female_alpha'].rename(columns={c: c + '_alpha' for c in Z_timepoint2['female_alpha'].columns if c not in ['participant_id']},inplace=True)
-    Z_timepoint2['female_beta'].rename(columns={c: c + '_beta' for c in Z_timepoint2['female_beta'].columns if c not in ['participant_id']},inplace=True)
-    Z_timepoint2['female_gamma'].rename(columns={c: c + '_gamma' for c in Z_timepoint2['female_gamma'].columns if c not in ['participant_id']},inplace=True)
-    Z_female = pd.concat([Z_timepoint2['female_theta'], Z_timepoint2['female_alpha'], Z_timepoint2['female_beta'], Z_timepoint2['female_gamma']], axis=1)
+    # Drop 'subject_id_test' from each before concatenation
+    band_dfs_male = [
+        Z_timepoint2['male'][band].drop(columns='subject_id_test')
+        for band in ['theta', 'alpha', 'beta', 'gamma']
+    ]
+
+    band_dfs_female = [
+        Z_timepoint2['female'][band].drop(columns='subject_id_test')
+        for band in ['theta', 'alpha', 'beta', 'gamma']
+    ]
+
+    # Concatenate subject_id once + all bands
+    Z_male = pd.concat([subject_ids_male] + band_dfs_male, axis=1)
+    Z_female = pd.concat([subject_ids_female] + band_dfs_female, axis=1)
 
     # add gender to Z score dataframe
     Z_male['gender'] = 1
@@ -230,10 +234,10 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
     regions_reject_f = [roi_id for roi_id, reject_value in zip(roi_ids, reject_f) if reject_value]
     regions_reject_m = [roi_id for roi_id, reject_value in zip(roi_ids, reject_m) if reject_value]
 
-    filepath = working_dir + '/output_data'
+    filepath = os.path.join(working_dir, 'output_data')
     if len(regions_reject_f) > 1 :
-        write_list_to_file(regions_reject_f, filepath + f'/regions_reject_null_rsMEG_female.csv')
-        write_list_to_file(regions_reject_m, filepath + f'/regions_reject_null_rsMEG_male.csv')
+        write_list_to_file(regions_reject_f, os.path.join(filepath, 'regions_reject_null_rsMEG_female.csv'))
+        write_list_to_file(regions_reject_m, os.path.join(filepath, 'regions_reject_null_rsMEG_male.csv'))
 
     maxf = Z_female[roi_ids].max(axis=0).max()
     maxm = Z_male[roi_ids].max(axis=0).max()
@@ -262,4 +266,4 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
         plot_by_gender_no_kde(Z_female_orig[band], Z_male_orig[band], roi_ids_orig, reject_f_band, reject_m_band, pvals_corrected_f_band,
                           pvals_corrected_m_band, binedges, nokde, working_dir, band)
 
-        mystop=1
+    mystop=1
