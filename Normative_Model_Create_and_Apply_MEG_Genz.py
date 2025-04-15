@@ -13,9 +13,9 @@ from make_and_apply_normative_model import make_and_apply_normative_model
 from make_time1_normative_model_bootstrap import make_time1_normative_model_bootstrap
 
 struct_var = 'meg'
-n_splits = 1           # number of train/test splits
+n_splits = 2           # number of train/test splits
 show_plots = 1         #set to 1 to show training and test data spline fit plots.
-show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
+show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for model
 spline_knots = 2        # number of knots in spline to use in model
 perform_train_test_split_precovid = 0  # flag indicating whether to split training set (pre-covid data) into train and
@@ -32,7 +32,8 @@ perform_bootstrap = 0
 n_bootstraps = 1
 lobes_only = 0
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
-bands = ['theta', 'alpha', 'beta', 'gamma']
+# bands = ['theta', 'alpha', 'beta', 'gamma']
+bands = ['theta', 'alpha']
 
 Z_time1 = {}
 Z_time2 = {}
@@ -41,13 +42,9 @@ for gender in ['male', 'female']:
 
     if run_make_norm_model:
 
-        make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
+        Z2_all_splits = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                              spline_knots, data_dir, working_dir, ct_data_dir, MEG_resting_state_filename,
-                                             subjects_to_exclude, bands, n_splits)
-
-
-
-
+                                             subjects_to_exclude, bands, n_splits, lobes_only)
 
         Z_time1[gender], rsd_v1 = make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                    perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
@@ -60,25 +57,25 @@ for gender in ['male', 'female']:
             make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
                                                          working_dir, bands, n_bootstraps)
 
-    if run_apply_norm_model:
-
-        Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                    working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands, lobes_only)
-
-if run_apply_norm_model:
-
-    for band in bands:
-        Z_time2_male= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                                   .format(working_dir, 'male', band))
-        Z_time2_male.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
-
-        Z_time2_female= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
-                                   .format(working_dir, 'female', band))
-        Z_time2_female.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
-
-        Z_time2[f'male_{band}'] = Z_time2_male
-        Z_time2[f'female_{band}'] = Z_time2_female
-
-    plot_and_compute_zcores_by_gender(Z_time2, working_dir, bands)
-
-mystop=1
+#     if run_apply_norm_model:
+#
+#         Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+#                                     working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands, lobes_only)
+#
+# if run_apply_norm_model:
+#
+#     for band in bands:
+#         Z_time2_male= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+#                                    .format(working_dir, 'male', band))
+#         Z_time2_male.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
+#
+#         Z_time2_female= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
+#                                    .format(working_dir, 'female', band))
+#         Z_time2_female.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
+#
+#         Z_time2[f'male_{band}'] = Z_time2_male
+#         Z_time2[f'female_{band}'] = Z_time2_female
+#
+#     plot_and_compute_zcores_by_gender(Z_time2, working_dir, bands)
+#
+# mystop=1

@@ -20,11 +20,6 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
                                spline_knots, data_dir, working_dir, ct_data_dir, MEG_filename,
                                subjects_to_exclude, bands, n_splits, lobes_only):
 
-    # Initialize dictionaries for storing Z scores
-    Z2_all_splits_dict = {}
-    for b in bands:
-         Z2_all_splits_dict[b] = {}
-
     # load all rs MEG data
     rsd_v1, rsd_v2, all_subjects_orig, sub_v1_only_orig, sub_v2_only_orig \
                                  = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
@@ -45,9 +40,11 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
     rsd_v2.columns = rsd_v1.columns.str.replace(r'^t2_', '', regex=True)
 
-    columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh']
+### FOR DEBUGGING ONLY
+    columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh']
     rsd_v1 = rsd_v1[columns_to_keep]
     rsd_v2 = rsd_v2[columns_to_keep]
+    ############
 
     # Scale response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
@@ -119,8 +116,8 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     fname_test = '{}/visit1_subjects_test_sets_{}_splits_{}.txt'.format(working_dir, n_splits, struct_var)
     np.save(fname_test, test_set_array)
 
-    make_model(rsd_v1, rsd_v2, struct_var, n_splits, train_set_array, test_set_array,
+    Z2_all_splits_dict = make_model(rsd_v1, rsd_v2, struct_var, n_splits, train_set_array, test_set_array,
                show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, gender, bands, lobes_only)
 
 
-    # return Z_score_test_matrix, rsd_v1
+    return Z2_all_splits_dict

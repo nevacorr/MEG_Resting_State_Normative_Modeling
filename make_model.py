@@ -15,7 +15,12 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
     dirdata = 'data'
     dirpredict = 'predict_files'
 
-    Z2_all_splits = pd.DataFrame()
+    # Initialize dictionaries for storing Z scores
+    Z_time2 = {}
+    Z2_all_splits_dict = {}
+    for b in bands:
+        Z_time2[b] = pd.DataFrame()
+        Z2_all_splits_dict[b] = pd.DataFrame()
 
     for split in range(n_splits):
 
@@ -27,8 +32,8 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         rsd_v1.reset_index(drop=True, inplace=True)
         rsd_v2.reset_index(drop=True, inplace=True)
 
-
-        plot_num_subjs(sex, rsd_v1, f'{sex.capitalize()} Subjects by Age with Pre-COVID Data used to Train Model Split {split}\n '
+        if show_nsubject_plots:
+            plot_num_subjs(sex, rsd_v1, f'{sex.capitalize()} Subjects by Age with Pre-COVID Data used to Train Model Split {split}\n '
                                     f'(Total N=' + str(rsd_v1.shape[0]) + ')', struct_var,'pre-covid_train', os.path.join(working_dir, dirdata))
 
         # # separate the brain features (response variables) and predictors (age) in to separate dataframes
@@ -36,7 +41,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays']]
 
         # loop through all power bands separately
-        for bandnum, band in enumerate(bands):
+        for band in bands:
 
             # make directories to store band specific files in
             recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}'))
@@ -106,7 +111,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
 
             # Loop through ROIs
 
-            for regnum, roi in enumerate(roi_ids):
+            for roi in roi_ids:
                 print('Running ROI:', roi)
                 roi_dir = os.path.join(data_dir, roi)
                 model_dir = os.path.join(data_dir, roi, 'Models')
@@ -136,11 +141,11 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
                                       model_dir, roi, show_plots, working_dir, dirdata)
 
-        Z_time2 = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                    working_dir,rsd_v2, roi_ids, dirdata, dirpredict, sex, bands, lobes_only)
+            Z_time2[band] = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+                                working_dir,rsd_v2, roi_ids, dirdata, dirpredict, sex, band)
 
-        Z_time2['split'] = split
+            Z_time2[band]['split'] = split
 
-        Z2_all_splits = pd.concat([Z2_all_splits, Z_time2], ignore_index=True)
+            Z2_all_splits_dict[band] = pd.concat([Z2_all_splits_dict[band], Z_time2[band]], ignore_index=True)
 
-    return Z2_all_splits
+    return Z2_all_splits_dict
