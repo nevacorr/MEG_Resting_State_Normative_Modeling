@@ -4,10 +4,8 @@
 # adolescent meg data collected at two time points (before and after the COVID lockdowns).
 ######
 import os
-
 import pandas as pd
-from make_time1_normative_model import make_time1_normative_model
-from apply_normative_model_time2 import apply_normative_model_time2
+import pickle
 from plot_and_compute_zdistributions import plot_and_compute_zcores_by_gender
 from make_and_apply_normative_model import make_and_apply_normative_model
 from make_time1_normative_model_bootstrap import make_time1_normative_model_bootstrap
@@ -23,16 +21,13 @@ MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_
 data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
 working_dir = os.getcwd()
 
-run_make_norm_model = 1
-perform_bootstrap = 0
-n_bootstraps = 1
+run_make_norm_model = 0
+plot_z_distributions = 1
 lobes_only = 0
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
-# bands = ['theta', 'alpha', 'beta', 'gamma']
-bands = ['theta', 'alpha']
+bands = ['theta', 'alpha', 'beta', 'gamma']
 
 Z2_all_splits = {}
-Z_time2 = {}
 
 for gender in ['male', 'female']:
 
@@ -41,33 +36,13 @@ for gender in ['male', 'female']:
         Z2_all_splits[gender] = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                              spline_knots, data_dir, working_dir, ct_data_dir, MEG_resting_state_filename,
                                              subjects_to_exclude, bands, n_splits, lobes_only)
+    else:
 
-        # Z_time1[gender], rsd_v1 = make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-        #                            perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
-        #                            subjects_to_exclude, bands, lobes_only)
-        #
-        # Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
-        #
-        # if perform_bootstrap == 0:
-        #
-        #     make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
-        #                                                  working_dir, bands, n_bootstraps)
+        with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'rb') as f:
+            Z2_all_splits[gender] = pickle.load(f)
 
+if plot_z_distributions:
 
-# if run_apply_norm_model:
-#
-#     for band in bands:
-#         Z_time2_male= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
-#                                    .format(working_dir, 'male', band))
-#         Z_time2_male.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
-#
-#         Z_time2_female= pd.read_csv('{}/predict_files/{}_{}/Z_scores_by_region_postcovid_testset_Final.txt'
-#                                    .format(working_dir, 'female', band))
-#         Z_time2_female.rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
-#
-#         Z_time2[f'male_{band}'] = Z_time2_male
-#         Z_time2[f'female_{band}'] = Z_time2_female
-#
-#     plot_and_compute_zcores_by_gender(Z_time2, working_dir, bands)
+    plot_and_compute_zcores_by_gender(Z2_all_splits, working_dir, bands)
 #
 # mystop=1
