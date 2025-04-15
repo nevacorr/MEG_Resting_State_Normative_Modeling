@@ -14,14 +14,10 @@ from make_time1_normative_model_bootstrap import make_time1_normative_model_boot
 
 struct_var = 'meg'
 n_splits = 2           # number of train/test splits
-show_plots = 1         #set to 1 to show training and test data spline fit plots.
+show_plots = 0         #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
-spline_order = 1        # order of spline to use for model
-spline_knots = 2        # number of knots in spline to use in model
-perform_train_test_split_precovid = 0  # flag indicating whether to split training set (pre-covid data) into train and
-                                       # validations (test) sets. If this is set to 0, the entire training set is used
-                                       # for the model and there is no validation set. Regardless of the value of this
-                                       # flag, no post-covid data is used in creating or evaluating the normative model.
+spline_order = 1        # order of spline to use for models
+spline_knots = 2        # number of knots in spline to use in models
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
 data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
@@ -35,33 +31,29 @@ subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is 
 # bands = ['theta', 'alpha', 'beta', 'gamma']
 bands = ['theta', 'alpha']
 
-Z_time1 = {}
+Z2_all_splits = {}
 Z_time2 = {}
 
 for gender in ['male', 'female']:
 
     if run_make_norm_model:
 
-        Z2_all_splits = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
+        Z2_all_splits[gender] = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                              spline_knots, data_dir, working_dir, ct_data_dir, MEG_resting_state_filename,
                                              subjects_to_exclude, bands, n_splits, lobes_only)
 
-        Z_time1[gender], rsd_v1 = make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                   perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
-                                   subjects_to_exclude, bands, lobes_only)
+        # Z_time1[gender], rsd_v1 = make_time1_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
+        #                            perform_train_test_split_precovid, working_dir, MEG_resting_state_filename, ct_data_dir,
+        #                            subjects_to_exclude, bands, lobes_only)
+        #
+        # Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
+        #
+        # if perform_bootstrap == 0:
+        #
+        #     make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
+        #                                                  working_dir, bands, n_bootstraps)
 
-        Z_time1[gender].drop(columns=['subject_id_test'], inplace=True)
 
-        if perform_bootstrap == 0:
-
-            make_time1_normative_model_bootstrap(rsd_v1, gender,spline_order, spline_knots,
-                                                         working_dir, bands, n_bootstraps)
-
-#     if run_apply_norm_model:
-#
-#         Z_time2[gender], roi_ids = apply_normative_model_time2(gender, struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-#                                     working_dir, MEG_resting_state_filename, ct_data_dir, subjects_to_exclude, bands, lobes_only)
-#
 # if run_apply_norm_model:
 #
 #     for band in bands:

@@ -34,9 +34,6 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     rs_covariates = rsd_v2[['agegrp', 'agedays']]
     rscols = [col for col in rsd_v2.columns if col not in ['subject', 'agegrp', 'agedays']]
 
-    # loop through each power band separately
-
-
     # make directories to store band specific files in
     recreate_folder(os.path.join(working_dir, dirpredict, f'{sex}_{band}'))
     recreate_folder(os.path.join(working_dir, dirpredict, f'{sex}_{band}', 'plots'))
