@@ -1,20 +1,12 @@
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 import os
-import shutil
-from sklearn.model_selection import train_test_split
-from pcntoolkit.normative import estimate, evaluate
-from helper_functions_MEG import plot_num_subjs, plot_feature_distributions
-from helper_functions_MEG import create_design_matrix_one_gender
-from helper_functions_MEG import create_dummy_design_matrix_one_gender, remove_outliers_IQR, recreate_folder
-from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles
-from helper_functions_MEG import write_ages_to_file_by_gender
+from helper_functions_MEG import plot_num_subjs
+from helper_functions_MEG import recreate_folder
 from prepare_rsMEG_data import prepare_rsMEG_data
 from sklearn.model_selection import StratifiedShuffleSplit
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
-from joblib import dump
 from make_model import make_model
+import pickle
 
 def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                spline_knots, data_dir, working_dir, ct_data_dir, MEG_filename,
@@ -40,11 +32,12 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
     rsd_v2.columns = rsd_v1.columns.str.replace(r'^t2_', '', regex=True)
 
-### FOR DEBUGGING ONLY
-    columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh']
-    rsd_v1 = rsd_v1[columns_to_keep]
-    rsd_v2 = rsd_v2[columns_to_keep]
-    ############
+# ### FOR DEBUGGING ONLY
+#     columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
+#                        'beta-bankssts-lh', 'gamma-bankssts-lh']
+#     rsd_v1 = rsd_v1[columns_to_keep]
+#     rsd_v2 = rsd_v2[columns_to_keep]
+#     ############
 
     # Scale response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
@@ -133,5 +126,8 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
 
         # Store the result back in the dictionary
         Z2_all_splits_dict[band] = averaged_df
+
+        with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'wb') as f:
+            pickle.dump(Z2_all_splits_dict, f)
 
     return Z2_all_splits_dict
