@@ -9,6 +9,7 @@ from helper_functions_MEG import create_dummy_design_matrix_one_gender
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles, plot_num_subjs
 from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder, calc_model_slope
 from apply_normative_model_time2 import apply_normative_model_time2
+import time
 
 def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, test_set_array,
                show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, sex, bands, lobes_only):
@@ -25,7 +26,10 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         Z_time2[b] = pd.DataFrame()
         Z2_all_splits_dict[b] = pd.DataFrame()
 
+    all_split_start = time.time()
     for split in range(n_splits):
+        print(f'Running split {split}')
+        start_time = time.time()
 
         subjects_train = train_set_array[split, :]
         subjects_test = test_set_array[split, :]
@@ -157,5 +161,12 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             Z_time2[band]['split'] = split
 
             Z2_all_splits_dict[band] = pd.concat([Z2_all_splits_dict[band], Z_time2[band]], ignore_index=True)
+
+        end_time = time.time()
+        elapsed = (end_time - start_time)/60.0
+        elapsed_all_time = (end_time - all_split_start)/60.0
+
+        print(f'Elapsed time for split{split} is {elapsed:.2f} minutes')
+        print(f'Elapsed time for program is {elapsed_all_time:.2f} minutes')
 
     return Z2_all_splits_dict
