@@ -28,7 +28,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
 
     all_split_start = time.time()
     for split in range(n_splits):
-        print(f'Running split {split}')
+        print(f'Running split {split+1}')
         start_time = time.time()
 
         subjects_train = train_set_array[split, :]
@@ -119,7 +119,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             # Loop through ROIs
 
             for roi in roi_ids:
-                print('Running ROI:', roi)
+                print(f'Running ROI {roi} Split {split+1} Band {band}')
                 roi_dir = os.path.join(data_dir, roi)
                 model_dir = os.path.join(data_dir, roi, 'Models')
                 os.chdir(roi_dir)
@@ -166,7 +166,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         elapsed = (end_time - start_time)/60.0
         elapsed_all_time = (end_time - all_split_start)/60.0
 
-        print(f'Elapsed time for split{split} is {elapsed:.2f} minutes')
-        print(f'Elapsed time for program is {elapsed_all_time:.2f} minutes')
+        print(f'Elapsed time for split{split+1} is {elapsed:.2f} minutes')
+        print(f'Elapsed time for program {n_splits} splits is {elapsed_all_time:.2f} minutes')
 
     return Z2_all_splits_dict
