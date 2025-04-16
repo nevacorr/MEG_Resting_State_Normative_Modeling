@@ -41,8 +41,6 @@ temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'banks
 
 occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
 
-minmax_scaler = load(f'{working_dir}/minmax_scaler.bin')
-
 # colormap = create_custom_colormap()
 
 for gender in ['male', 'female']:
@@ -94,7 +92,7 @@ for gender in ['male', 'female']:
             # Calculate predictions from model based on covariate data
             y_pred = np.dot(dummy_cov, data.blr.m)
 
-            y_pred = y_pred * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
+            # y_pred = y_pred * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
 
             # calculate percent change with age this brain region
             pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
@@ -105,7 +103,7 @@ for gender in ['male', 'female']:
                 r = region.replace('-rh', '_right')
 
             # Convert covariate and y values back to unscaled space
-            dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
+            # dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
             if df_sig.loc[band, region] != 0:
                 change_dict[r] = pchange
