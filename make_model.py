@@ -10,6 +10,7 @@ from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, move
 from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder, calc_model_slope
 from apply_normative_model_time2 import apply_normative_model_time2
 import time
+import json
 
 def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, test_set_array,
                show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, sex, bands, lobes_only):
@@ -156,6 +157,10 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             Z_time2[band]['split'] = split
 
             Z2_all_splits_dict[band] = pd.concat([Z2_all_splits_dict[band], Z_time2[band]], ignore_index=True)
+
+        # Save Z scores to file
+        with open(os.path.join(working_dir, 'Z2_all_splits_dict.json'), 'w') as f:
+            json.dump(Z2_all_splits_dict, f, indent=4)
 
         # Save model slopes to file
         model_slope['split'] = split
