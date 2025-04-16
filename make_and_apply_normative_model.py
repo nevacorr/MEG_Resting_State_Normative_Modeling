@@ -46,10 +46,6 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
     rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
 
-    # Create directory for stroring subject number bar plots
-    recreate_folder(os.path.join(working_dir, 'data'))
-    recreate_folder(os.path.join(working_dir, 'predict_files'))
-
      # show bar plots with number of subjects per age group in pre-COVID data
     if show_nsubject_plots:
 

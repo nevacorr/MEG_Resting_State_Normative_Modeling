@@ -4,15 +4,14 @@
 # adolescent meg data collected at two time points (before and after the COVID lockdowns).
 ######
 import os
-import pandas as pd
 import pickle
 from plot_and_compute_zdistributions import plot_and_compute_zcores_by_gender
 from make_and_apply_normative_model import make_and_apply_normative_model
-from make_time1_normative_model_bootstrap import make_time1_normative_model_bootstrap
+from helper_functions_MEG import recreate_folder, copy_old_files_to_backup_folder
 
 struct_var = 'meg'
 n_splits = 2           # number of train/test splits
-show_plots = 0         #set to 1 to show training and test data spline fit plots.
+show_plots = 1         #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
@@ -21,13 +20,19 @@ MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_
 data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
 working_dir = os.getcwd()
 
-run_make_norm_model = 0
+run_make_norm_model = 1
 plot_z_distributions = 1
 lobes_only = 0
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
 bands = ['theta', 'alpha', 'beta', 'gamma']
 
 Z2_all_splits = {}
+
+# Create directory for stroring subject number bar plots
+recreate_folder(os.path.join(working_dir, 'data'))
+recreate_folder(os.path.join(working_dir, 'predict_files'))
+copy_old_files_to_backup_folder(os.path.join(working_dir, 'output_data'), os.path.join(working_dir, 'output_data_bak'))
+recreate_folder(os.path.join(working_dir, 'output_data'))
 
 for gender in ['male', 'female']:
 
@@ -44,5 +49,3 @@ for gender in ['male', 'female']:
 if plot_z_distributions:
 
     plot_and_compute_zcores_by_gender(Z2_all_splits, working_dir, bands)
-#
-# mystop=1
