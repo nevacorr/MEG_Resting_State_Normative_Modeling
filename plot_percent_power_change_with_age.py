@@ -19,29 +19,13 @@ from scipy import stats
 from bipolar import hotcold
 
 # Set options
-lobes_only = 0
-plot_model = 1
-
+plot_model = 0
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
-
-frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
-               'frontalpole','rostralanteriorcingulate', 'caudalanteriorcingulate']
-
-parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
-                'posteriorcingulate','isthmuscingulate']
-
-temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
-                'entorhinal', 'temporalpole', 'parahippocampal']
-
-occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
-
-# colormap = create_custom_colormap()
 
 for gender in ['male', 'female']:
 
@@ -55,11 +39,7 @@ for gender in ['male', 'female']:
         model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
 
         # Get a list of all region names by listing directories in model folder
-        if lobes_only:
-            all_regions = ['frontal-lh', 'frontal-rh', 'occipital-lh', 'occipital-rh', 'parietal-lh', 'parietal-rh',
-                       'temporal-lh', 'temporal-rh']
-        else:
-            all_regions = df_sig.columns.tolist()
+        all_regions = df_sig.columns.tolist()
         all_regions.sort()
         total_reg_num = len(all_regions)
 
@@ -77,8 +57,7 @@ for gender in ['male', 'female']:
             agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
 
             # Create dummy covariate matrices with bspline values and save to file
-            dummy_cov_file_path = create_dummy_design_matrix_one_gender(band, agemin, agemax,
-                                                                            None, spline_order, spline_knots, working_dir)
+            dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots, working_dir)
             # Load dummy covariate matrix
             dummy_cov = np.loadtxt(dummy_cov_file_path)
 
@@ -116,41 +95,11 @@ for gender in ['male', 'female']:
                     c = 'crimson'
                 # plot model for this brain region
                 plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
-                plt.ylim([0, 500])
+                plt.ylim([0, 40])
                 plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
                 plt.show()
 
-        if lobes_only:
-            lobe_dict = {}
-            if 'frontal_left' in change_dict:
-                    for reg in frontal_reg:
-                        lobe_dict[f'{reg}_left'] = change_dict['frontal_left']
-            if 'frontal_right' in change_dict:
-                    for reg in frontal_reg:
-                        lobe_dict[f'{reg}_right'] = change_dict['frontal_right']
-            if 'temporal_left' in change_dict:
-                    for reg in temporal_reg:
-                        lobe_dict[f'{reg}_left'] = change_dict['temporal_left']
-            if 'temporal_right' in change_dict:
-                    for reg in temporal_reg:
-                        lobe_dict[f'{reg}_right'] = change_dict['temporal_right']
-            if 'parietal_left' in change_dict:
-                    for reg in parietal_reg:
-                        lobe_dict[f'{reg}_left'] = change_dict['parietal_left']
-            if 'parietal_right' in change_dict:
-                    for reg in parietal_reg:
-                        lobe_dict[f'{reg}_right'] = change_dict['parietal_right']
-            if 'occipital_left' in change_dict:
-                    for reg in occipital_reg:
-                        lobe_dict[f'{reg}_left'] = change_dict['occipital_left']
-            if 'occipital_right' in change_dict:
-                    for reg in occipital_reg:
-                        lobe_dict[f'{reg}_right'] = change_dict['occipital_right']
-
-        if lobes_only:
-            dict_to_plot = lobe_dict.copy()
-        else:
-            dict_to_plot = change_dict.copy()
+        dict_to_plot = change_dict.copy()
 
         cmap = hotcold(neutral=0.0)
 
