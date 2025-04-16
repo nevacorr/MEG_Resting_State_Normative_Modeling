@@ -267,6 +267,31 @@ def recreate_folder(folder_path):
     os.makedirs(folder_path)         # Create the folder (again or for the first time)
     print("made directory {}".format(folder_path))
 
+def copy_old_files_to_backup_folder(src_folder, dst_folder):
+    # Move all files (and optionally subfolders)
+    for filename in os.listdir(src_folder):
+        src_path = os.path.join(src_folder, filename)
+        dst_path = os.path.join(dst_folder, filename)
+        shutil.move(src_path, dst_path)
+
+def calc_model_slope(dummy_cov_file_path,nm):
+    dummy_cov = np.loadtxt(dummy_cov_file_path)
+
+    # remove last row which has erroneous bspline values
+    dummy_cov = dummy_cov[:-1]
+
+    # Calculate the slope of the line
+    index_for_x1 = 0
+    index_for_x2 = dummy_cov.shape[0] - 1
+
+    model_slope = (
+            (nm.blr.m[0] * (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]) +
+             nm.blr.m[1] * (dummy_cov[index_for_x2, 1] - dummy_cov[index_for_x1, 1]) +
+             nm.blr.m[2] * (dummy_cov[index_for_x2, 2] - dummy_cov[index_for_x1, 2]) +
+             nm.blr.m[3] * (dummy_cov[index_for_x2, 3] - dummy_cov[index_for_x1, 3])) /
+            (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]))
+
+    return model_slope
 
 # def plot_scatter_with_trendline_corthick_MEGrs_byreg(df, band, cortthick_cols, band_cols, cortthick_str_to_remove, band_str_to_remove, mycolor):
 #     all_band_col_names = []

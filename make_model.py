@@ -1,12 +1,13 @@
 import pandas as pd
 import os
 import shutil
+import numpy as np
 from numpy.core.defchararray import capitalize
 from pcntoolkit.normative import estimate, evaluate
 from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender
 from helper_functions_MEG import create_dummy_design_matrix_one_gender
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles, plot_num_subjs
-from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder
+from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder, calc_model_slope
 from apply_normative_model_time2 import apply_normative_model_time2
 
 def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, test_set_array,
@@ -15,9 +16,11 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
     dirdata = 'data'
     dirpredict = 'predict_files'
 
-    # Initialize dictionaries for storing Z scores
+    # Initialize dictionaries for storing Z scores and model slopes
     Z_time2 = {}
     Z2_all_splits_dict = {}
+    model_slope = pd.DataFrame()
+
     for b in bands:
         Z_time2[b] = pd.DataFrame()
         Z2_all_splits_dict[b] = pd.DataFrame()
@@ -136,10 +139,17 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 # create dummy design matrices for visualizing model
                 dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots,
                                                                             working_dir)
+                # calculate model slope
+                model_slope.loc[band, roi] = calc_model_slope(dummy_cov_file_path, nm)
 
                 # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
                 plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
                                       model_dir, roi, show_plots, working_dir, dirdata)
+
+            # Save model slopes to file
+            model_slope['split'] = split
+            slope_file_path = f'{working_dir}/output_data/{sex}_{band}_{n_splits}_splits_allsplits_slopes.csv'
+            model_slope.to_csv(slope_file_path, mode='a', index=False, header = not os.path.isfile(slope_file_path))
 
             Z_time2[band] = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                 working_dir,rsd_v2, roi_ids, dirdata, dirpredict, sex, band)
