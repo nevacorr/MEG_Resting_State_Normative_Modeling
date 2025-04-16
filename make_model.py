@@ -150,17 +150,17 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
                                       model_dir, roi, show_plots, working_dir, dirdata)
 
-            # Save model slopes to file
-            model_slope['split'] = split
-            slope_file_path = f'{working_dir}/output_data/{sex}_{band}_{n_splits}_splits_allsplits_slopes.csv'
-            model_slope.to_csv(slope_file_path, mode='a', index=False, header = not os.path.isfile(slope_file_path))
-
             Z_time2[band] = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                 working_dir,rsd_v2, roi_ids, dirdata, dirpredict, sex, band)
 
             Z_time2[band]['split'] = split
 
             Z2_all_splits_dict[band] = pd.concat([Z2_all_splits_dict[band], Z_time2[band]], ignore_index=True)
+
+        # Save model slopes to file
+        model_slope['split'] = split
+        slope_file_path = f'{working_dir}/output_data/{sex}_{n_splits}_splits_allsplits_slopes.csv'
+        model_slope.to_csv(slope_file_path, mode='a', index=True, header = not os.path.isfile(slope_file_path))
 
         end_time = time.time()
         elapsed = (end_time - start_time)/60.0
