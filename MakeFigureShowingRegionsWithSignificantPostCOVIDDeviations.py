@@ -10,20 +10,6 @@ lobes_only = 0
 
 working_dir = os.getcwd()
 
-frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
-               'frontalpole',
-               'rostralanteriorcingulate', 'caudalanteriorcingulate']
-
-parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
-                'posteriorcingulate',
-                'isthmuscingulate']
-
-temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
-                'entorhinal', 'temporalpole', 'parahippocampal']
-
-occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
-
 regions_reject_female_file = f'{working_dir}/output_data/regions_reject_null_rsMEG_female.csv'
 regions_female = read_text_list(regions_reject_female_file)
 
