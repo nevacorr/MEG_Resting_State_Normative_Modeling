@@ -6,16 +6,8 @@ import numpy as np
 import pickle
 import pandas as pd
 from helper_functions_MEG import create_dummy_design_matrix_one_gender, read_ages_from_file
-from helper_functions_MEG import fit_regression_model_dummy_data_one_gender
-# import ggseg
 import myggseg
-from joblib import load
-from matplotlib import colormaps
 from matplotlib import pyplot as plt
-from matplotlib.colors import Normalize, ListedColormap
-from scipy.stats import pearsonr
-from scipy import stats
-# from create_custom_colormap import create_custom_colormap
 from bipolar import hotcold
 
 # Set options
@@ -26,17 +18,35 @@ save_dir = working_dir + '/plots'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
+n_splits = 30
 
 for gender in ['male', 'female']:
 
-    df_sig= pd.read_csv(f'{working_dir}/output_data/{gender}_significance of slopes by band and region.csv', index_col=0)
+    model_slope = pd.read_csv(os.path.join
+                              (working_dir, 'output_data', f'{gender}_{n_splits}_splits_allsplits_slopes.csv'))
+
+    model_slope.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
+
+    model_slopes_dict = {band: band_df.drop(columns=['band', 'split']) for band, band_df in model_slope.groupby('band')}
+
+    df_sig = pd.DataFrame()
+
+    for band in ['theta', 'alpha', 'beta', 'gamma']:
+
+        # Calculate confidence intervals
+        for reg in model_slopes_dict[band].columns:
+            slopes_reg = model_slopes_dict[band].loc[:, reg]
+            lower_bound, upper_bound = np.percentile(slopes_reg.to_numpy(), [2.5, 97.5])
+            if lower_bound < 0 < upper_bound:
+                df_sig.loc[band, reg] = 0
+            else:
+                df_sig.loc[band, reg] = 1
+
     df_sig = df_sig.astype(int)
 
     bands = df_sig.index.to_list()
 
     for bandnum, band in enumerate(bands):
-
-        model_dir_path = f'{working_dir}/data/{gender}_{band}/ROI_models'
 
         # Get a list of all region names by listing directories in model folder
         all_regions = df_sig.columns.tolist()
@@ -71,8 +81,6 @@ for gender in ['male', 'female']:
             # Calculate predictions from model based on covariate data
             y_pred = np.dot(dummy_cov, data.blr.m)
 
-            # y_pred = y_pred * minmax_scaler.data_range_[regnum + (bandnum * total_reg_num)] + minmax_scaler.data_min_[regnum + (bandnum * total_reg_num)]
-
             # calculate percent change with age this brain region
             pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
 
@@ -80,9 +88,6 @@ for gender in ['male', 'female']:
                 r = region.replace('-lh', '_left')
             else:
                 r = region.replace('-rh', '_right')
-
-            # Convert covariate and y values back to unscaled space
-            # dummy_cov[:,0] = dummy_cov[:,0] * minmax_scaler.data_range_[-1] + minmax_scaler.data_min_[-1]
 
             if df_sig.loc[band, region] != 0:
                 change_dict[r] = pchange
@@ -98,6 +103,7 @@ for gender in ['male', 'female']:
                 plt.ylim([0, 40])
                 plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
                 plt.show()
+                mystop=1
 
         dict_to_plot = change_dict.copy()
 
@@ -114,5 +120,5 @@ for gender in ['male', 'female']:
                 file.write(f'{key} {change_dict[key]}\n')
 
 plt.show()
-mystop=1
+
 
