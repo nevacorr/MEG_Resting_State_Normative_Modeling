@@ -48,7 +48,7 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
     male_dict_to_plot = female_dict[band].copy()
 
     # Define the colors for each integer value
-    colors = ['darkorange', 'steelblue', 'limegreen', 'mediumpurple']
+    colors = ['darkorange', 'steelblue', 'mediumseagreen', 'mediumpurple']
     cmap = ListedColormap(colors)
 
     filename = f'Female Regions with significantly altered power in post-COVID rsMEG {band} band'
