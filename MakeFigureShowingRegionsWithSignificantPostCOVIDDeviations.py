@@ -2,6 +2,7 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import myggseg
+from matplotlib.colors import ListedColormap
 
 from helper_functions_MEG import read_text_list
 
@@ -46,12 +47,16 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
     female_dict_to_plot = female_dict[band].copy()
     male_dict_to_plot = female_dict[band].copy()
 
+    # Define the colors for each integer value
+    colors = ['darkorange', 'steelblue', 'limegreen', 'mediumpurple']
+    cmap = ListedColormap(colors)
+
     filename = f'Female Regions with significantly altered power in post-COVID rsMEG {band} band'
-    myggseg.plot_dk(female_dict_to_plot, save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
+    myggseg.plot_dk(female_dict_to_plot, save_dir, filename, cmap=cmap, background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
                       title=f'Female Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
 
     filename = f'Male Regions with significantly altered power in post-COVID rsMEG {band} band'
-    myggseg.plot_dk(male_dict_to_plot, save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
+    myggseg.plot_dk(male_dict_to_plot, save_dir, filename, cmap=cmap, background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
                       title=f'Male Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
 
 plt.show()
