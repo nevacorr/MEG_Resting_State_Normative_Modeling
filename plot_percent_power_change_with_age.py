@@ -66,23 +66,29 @@ for gender in ['male', 'female']:
             # Read agemin and agemax from file
             agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
 
-            # Create dummy covariate matrices with bspline values and save to file
-            dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots, working_dir)
-            # Load dummy covariate matrix
-            dummy_cov = np.loadtxt(dummy_cov_file_path)
+            slope = model_slopes_dict[band][region].mean()
 
-            # remove last row which has erroneous bspline values
-            dummy_cov = dummy_cov[:-1]
+            ymin = 2.0  #approximate ymin
 
-            # Open model parameter file
-            with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
-                data = pickle.load(file)
+            pchange = slope  * (agemax - agemin) / ymin  * 100.0
 
-            # Calculate predictions from model based on covariate data
-            y_pred = np.dot(dummy_cov, data.blr.m)
-
-            # calculate percent change with age this brain region
-            pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
+            # # Create dummy covariate matrices with bspline values and save to file
+            # dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots, working_dir)
+            # # Load dummy covariate matrix
+            # dummy_cov = np.loadtxt(dummy_cov_file_path)
+            #
+            # # remove last row which has erroneous bspline values
+            # dummy_cov = dummy_cov[:-1]
+            #
+            # # Open model parameter file
+            # with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
+            #     data = pickle.load(file)
+            #
+            # # Calculate predictions from model based on covariate data
+            # y_pred = np.dot(dummy_cov, data.blr.m)
+            #
+            # # calculate percent change with age this brain region
+            # pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
 
             if '-lh' in region:
                 r = region.replace('-lh', '_left')
@@ -92,25 +98,25 @@ for gender in ['male', 'female']:
             if df_sig.loc[band, region] != 0:
                 change_dict[r] = pchange
 
-            if plot_model:
-                plt.figure()
-                if gender == 'male':
-                    c = 'b'
-                else:
-                    c = 'crimson'
-                # plot model for this brain region
-                plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
-                plt.ylim([0, 40])
-                plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
-                plt.show()
-                mystop=1
+            # if plot_model:
+            #     plt.figure()
+            #     if gender == 'male':
+            #         c = 'b'
+            #     else:
+            #         c = 'crimson'
+            #     # plot model for this brain region
+            #     plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
+            #     plt.ylim([0, 40])
+            #     plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
+            #     plt.show()
+            #     mystop=1
 
         dict_to_plot = change_dict.copy()
 
         cmap = hotcold(neutral=0.0)
 
         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-100, 100], figsize=(8,8),
+        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-30, 30], figsize=(8,8),
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
@@ -121,4 +127,5 @@ for gender in ['male', 'female']:
 
 plt.show()
 
+mystop=1
 
