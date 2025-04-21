@@ -22,6 +22,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
     Z_time2 = {}
     Z2_all_splits_dict = {}
     model_slope = pd.DataFrame()
+    ymin = pd.DataFrame()
 
     for b in bands:
         Z_time2[b] = pd.DataFrame()
@@ -145,7 +146,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots,
                                                                             working_dir)
                 # calculate model slope
-                model_slope.loc[band, roi] = calc_model_slope(dummy_cov_file_path, nm)
+                model_slope.loc[band, roi], ymin.loc[band, roi] = calc_model_slope(dummy_cov_file_path, nm)
 
                 # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
                 plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
@@ -161,8 +162,11 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
 
         # Save model slopes to file
         model_slope['split'] = split
+        ymin['split'] = split
         slope_file_path = f'{working_dir}/output_data/{sex}_{n_splits}_splits_allsplits_slopes.csv'
+        ymin_file = f'{working_dir}/output_data/{sex}_{n_splits}_splits_ymin.csv'
         model_slope.to_csv(slope_file_path, mode='a', index=True, header = not os.path.isfile(slope_file_path))
+        ymin.to_csv(ymin_file, mode='a', index=True, header = not os.path.isfile(ymin_file))
 
         end_time = time.time()
         elapsed = (end_time - start_time)/60.0
