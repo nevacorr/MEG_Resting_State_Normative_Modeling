@@ -5,9 +5,6 @@ import myggseg
 
 from helper_functions_MEG import read_text_list
 
-# Set some options
-lobes_only = 0
-
 working_dir = os.getcwd()
 
 regions_reject_female_file = f'{working_dir}/output_data/regions_reject_null_rsMEG_female.csv'
