@@ -50,9 +50,11 @@ def add_text_box(img, text, position, font_size=18, box_padding=10, box_color="b
 
 
 working_dir = os.getcwd()
+img_filename = 'Male Regions with significantly altered power in post-COVID rsMEG gamma band.png'
+save_filename = img_filename.replace('.png', '_annotated.png')
 
 # Load the image
-img = Image.open(os.path.join(working_dir, 'plots', 'Female Regions with significantly altered power in post-COVID rsMEG gamma band.png'))
+img = Image.open(os.path.join(working_dir, 'plots', img_filename))
 
 img_array = np.array(img)
 
@@ -87,4 +89,4 @@ plt.axis('off')  # Turn off axis for a clean view
 plt.show()
 
 # Save the result
-# img.save("moved_image.png")
+img.save(os.path.join(working_dir, 'plots', save_filename))
