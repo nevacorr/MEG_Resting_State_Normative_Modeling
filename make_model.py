@@ -162,7 +162,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             for band, df in Z2_all_splits_dict.items():
                 df.to_csv(os.path.join(working_dir, 'output_data', f'Z2_allsplits_{band}_{n_splits}splits.csv'), index=False)
 
-        # Save model slopes to file
+        # Save model slopes and ymins to file
         model_slope['split'] = split
         ymin['split'] = split
         slope_file_path = f'{working_dir}/output_data/{sex}_{n_splits}_splits_allsplits_slopes.csv'
