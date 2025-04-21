@@ -12,10 +12,10 @@ def add_text_box(img, text, position, font_size=18, box_padding=10, box_color="b
     - img: The PIL Image object.
     - text: The text to be added inside the box.
     - position: The (x, y) tuple indicating the top-left corner where the text box starts.
-    - font_size: The size of the font (default is 30).
+    - font_size: The size of the font (default is 18).
     - box_padding: The padding around the text inside the box (default is 10).
-    - box_color: The color of the background rectangle (text box) (default is "lightblue").
-    - text_color: The color of the text (default is "black").
+    - box_color: The color of the background rectangle (text box) (default is "black").
+    - text_color: The color of the text (default is "white").
 
     Returns:
     - The PIL Image object with the text box added.
