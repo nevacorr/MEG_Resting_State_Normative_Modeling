@@ -45,7 +45,7 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
     save_dir = working_dir + '/plots'
 
     female_dict_to_plot = female_dict[band].copy()
-    male_dict_to_plot = female_dict[band].copy()
+    male_dict_to_plot = male_dict[band].copy()
 
     # Define the colors for each integer value
     colors = ['darkorange', 'steelblue', 'mediumseagreen', 'mediumpurple']
@@ -53,11 +53,11 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
 
     filename = f'Female Regions with significantly altered power in post-COVID rsMEG {band} band'
     myggseg.plot_dk(female_dict_to_plot, save_dir, filename, cmap=cmap, background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
-                      title=f'Female Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
+                      title=f'Female Regions with Significantly Increased Power in\nPost-COVID rsMEG {band.capitalize()} Band')
 
     filename = f'Male Regions with significantly altered power in post-COVID rsMEG {band} band'
     myggseg.plot_dk(male_dict_to_plot, save_dir, filename, cmap=cmap, background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),
-                      title=f'Male Regions with Significantly Reduced Power in\nPost-COVID rsMEG {band.capitalize()} Band Power')
+                      title=f'Male Regions with Significantly Increased Power in\nPost-COVID rsMEG {band.capitalize()} Band')
 
 plt.show()
 mystop=1
