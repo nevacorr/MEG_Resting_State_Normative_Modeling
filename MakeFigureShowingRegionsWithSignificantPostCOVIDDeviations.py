@@ -6,7 +6,7 @@ import myggseg
 from helper_functions_MEG import read_text_list
 
 # Set some options
-lobes_only = 1
+lobes_only = 0
 
 working_dir = os.getcwd()
 
@@ -60,66 +60,8 @@ for i, band in enumerate(['theta','alpha', 'beta', 'gamma']):
 
     save_dir = working_dir + '/plots'
 
-    if lobes_only:
-        female_lobe_dict = {}
-        if 'frontal_left' in female_dict[band]:
-            for reg in frontal_reg:
-                female_lobe_dict[f'{reg}_left'] = female_dict[band]['frontal_left']
-        if 'frontal_right' in female_dict[band]:
-            for reg in frontal_reg:
-                female_lobe_dict[f'{reg}_right'] = female_dict[band]['frontal_right']
-        if 'temporal_left' in female_dict[band]:
-            for reg in temporal_reg:
-                female_lobe_dict[f'{reg}_left'] = female_dict[band]['temporal_left']
-        if 'temporal_right' in female_dict[band]:
-            for reg in temporal_reg:
-                female_lobe_dict[f'{reg}_right'] = female_dict[band]['temporal_right']
-        if 'parietal_left' in female_dict[band]:
-            for reg in parietal_reg:
-                female_lobe_dict[f'{reg}_left'] = female_dict[band]['parietal_left']
-        if 'parietal_right' in female_dict[band]:
-            for reg in parietal_reg:
-                female_lobe_dict[f'{reg}_right'] = female_dict[band]['parietal_right']
-        if 'occipital_left' in female_dict[band]:
-            for reg in occipital_reg:
-                female_lobe_dict[f'{reg}_left'] = female_dict[band]['occipital_left']
-        if 'occipital_right' in female_dict[band]:
-            for reg in occipital_reg:
-                female_lobe_dict[f'{reg}_right'] = female_dict[band]['occipital_right']
-
-        male_lobe_dict = {}
-        if 'frontal_left' in male_dict[band]:
-            for reg in frontal_reg:
-                male_lobe_dict[f'{reg}_left'] = male_dict[band]['frontal_left']
-        if 'frontal_right' in male_dict[band]:
-            for reg in frontal_reg:
-                male_lobe_dict[f'{reg}_right'] = male_dict[band]['frontal_right']
-        if 'temporal_left' in male_dict[band]:
-            for reg in temporal_reg:
-                male_lobe_dict[f'{reg}_left'] = male_dict[band]['temporal_left']
-        if 'temporal_right' in male_dict[band]:
-            for reg in temporal_reg:
-                male_lobe_dict[f'{reg}_right'] = male_dict[band]['temporal_right']
-        if 'parietal_left' in male_dict[band]:
-            for reg in parietal_reg:
-                male_lobe_dict[f'{reg}_left'] = male_dict[band]['parietal_left']
-        if 'parietal_right' in male_dict[band]:
-            for reg in parietal_reg:
-                male_lobe_dict[f'{reg}_right'] = male_dict[band]['parietal_right']
-        if 'occipital_left' in male_dict[band]:
-            for reg in occipital_reg:
-                male_lobe_dict[f'{reg}_left'] = male_dict[band]['occipital_left']
-        if 'occipital_right' in male_dict[band]:
-            for reg in occipital_reg:
-                male_lobe_dict[f'{reg}_right'] = male_dict[band]['occipital_right']
-
-    if lobes_only:
-        female_dict_to_plot = female_lobe_dict.copy()
-        male_dict_to_plot = male_lobe_dict.copy()
-    else:
-        female_dict_to_plot = female_dict[band].copy()
-        male_dict_to_plot = female_dict[band].copy()
-
+    female_dict_to_plot = female_dict[band].copy()
+    male_dict_to_plot = female_dict[band].copy()
 
     filename = f'Female Regions with significantly altered power in post-COVID rsMEG {band} band'
     myggseg.plot_dk(female_dict_to_plot, save_dir, filename, cmap='Dark2', background='k', vminmax=[0, 3], edgecolor='w', bordercolor='gray', figsize=(8,8),

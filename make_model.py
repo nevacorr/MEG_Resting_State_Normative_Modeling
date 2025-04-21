@@ -158,9 +158,6 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
 
             Z2_all_splits_dict[band] = pd.concat([Z2_all_splits_dict[band], Z_time2[band]], ignore_index=True)
 
-        # Save Z scores to file
-        with open(os.path.join(working_dir, 'Z2_all_splits_dict.json'), 'w') as f:
-            json.dump(Z2_all_splits_dict, f, indent=4)
 
         # Save model slopes to file
         model_slope['split'] = split
