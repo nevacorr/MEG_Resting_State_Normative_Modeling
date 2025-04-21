@@ -291,7 +291,10 @@ def calc_model_slope(dummy_cov_file_path,nm):
              nm.blr.m[3] * (dummy_cov[index_for_x2, 3] - dummy_cov[index_for_x1, 3])) /
             (dummy_cov[index_for_x2, 0] - dummy_cov[index_for_x1, 0]))
 
-    return model_slope
+    ymin = (nm.blr.m[0] * dummy_cov[index_for_x1, 0] + nm.blr.m[1] * dummy_cov[index_for_x1, 1] +
+            nm.blr.m[2] * dummy_cov[index_for_x1, 2] + nm.blr.m[3] * dummy_cov[index_for_x1, 3])
+
+    return model_slope, ymin
 
 # def plot_scatter_with_trendline_corthick_MEGrs_byreg(df, band, cortthick_cols, band_cols, cortthick_str_to_remove, band_str_to_remove, mycolor):
 #     all_band_col_names = []
