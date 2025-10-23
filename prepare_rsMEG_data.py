@@ -7,11 +7,20 @@
 # Size of source mod 2**32: 2198 bytes
 import pandas as pd
 import sys
+import re
 
 def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
 
     # Read in rsMEG data from file
     resting_state_data = pd.read_csv(filename)
+
+    #  fix  column headers in absolute file so _ is replaced with -
+    if 'rel' not in filename:
+        def fix_col(col):
+            # Replace the second underscore (after t1_ or t2_) with a hyphen
+            return re.sub(r'^(t[12]_[^_]+)_(.+)$', r'\1-\2', col)
+
+        resting_state_data.columns = [fix_col(col) for col in resting_state_data.columns]
 
     # Rename subject column
     resting_state_data.rename(columns={"id": "subject"}, inplace=True)
