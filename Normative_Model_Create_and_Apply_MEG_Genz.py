@@ -16,7 +16,8 @@ show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, f
 spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
-MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
+# MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
+MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_vfix_alln.csv'
 data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
 working_dir = os.getcwd()
 
