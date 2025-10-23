@@ -18,7 +18,7 @@ save_dir = working_dir + '/plots'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
-n_splits = 30
+n_splits = 100
 
 for gender in ['male', 'female']:
 
