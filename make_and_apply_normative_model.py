@@ -43,12 +43,12 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
 
     # # Multiply valuesin the specified columns by 100 (relative data)
-    # rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
-    # rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
+    rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
+    rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
 
     # Multiply valuesin the specified columns by 100 (absolute data)
-    rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] / 100.000
-    rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] / 100.000
+    # rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] / 100.000
+    # rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] / 100.000
 
      # show bar plots with number of subjects per age group in pre-COVID data
     if show_nsubject_plots:
