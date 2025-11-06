@@ -11,23 +11,29 @@ from matplotlib import pyplot as plt
 from bipolar import hotcold
 
 # Set options
-plot_model = 0
+plot_model = 1
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
+output_data_dir = 'output_data'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
-n_splits = 100
+n_splits = 1
 
 for gender in ['male', 'female']:
 
     model_slope = pd.read_csv(os.path.join
-                              (working_dir, 'output_data', f'{gender}_{n_splits}_splits_allsplits_slopes.csv'))
+                              (working_dir, os.path.join(working_dir, output_data_dir), f'{gender}_{n_splits}_splits_allsplits_slopes.csv'))
+
+    model_ymin = pd.read_csv(os.path.join
+                              (working_dir, os.path.join(working_dir, output_data_dir), f'{gender}_{n_splits}_splits_ymin.csv'))
 
     model_slope.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
+    model_ymin.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
 
     model_slopes_dict = {band: band_df.drop(columns=['band', 'split']) for band, band_df in model_slope.groupby('band')}
+    model_ymin_dict = {band: band_df.drop(columns=['band', 'split']) for band, band_df in model_ymin.groupby('band')}
 
     df_sig = pd.DataFrame()
 
@@ -68,9 +74,23 @@ for gender in ['male', 'female']:
 
             slope = model_slopes_dict[band][region].mean()
 
-            ymin = 2.0  #approximate ymin
+            ymin =  model_ymin_dict[band][region].mean()
 
-            pchange = slope  * (agemax - agemin) / ymin  * 100.0
+            # Create array of ages
+            ages = np.array([agemin, agemax])
+
+            # Compute predicted values using the line equation
+            predicted = ymin + slope * (ages - agemin)
+
+            # Plot
+            plt.plot(ages/age_conversion_factor, predicted, label='Predicted line', color='blue')
+            plt.xlabel('Age')
+            plt.ylabel('Predicted Value')
+            plt.title('Predicted Value vs Age')
+            plt.legend()
+            plt.show()
+
+            pchange = slope  * (agemax - agemin) / ymin
 
             # # Create dummy covariate matrices with bspline values and save to file
             # dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots, working_dir)
@@ -120,7 +140,7 @@ for gender in ['male', 'female']:
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
-        with open(f'{working_dir}/output_data/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+        with open(f'{os.path.join(working_dir, output_data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
                   'w') as file:
             for key in change_dict.keys():
                 file.write(f'{key} {change_dict[key]}\n')
