@@ -11,23 +11,34 @@ from matplotlib import pyplot as plt
 from bipolar import hotcold
 
 # Set options
-plot_model = 1
+plot_model = 0
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
-output_data_dir = 'output_data'
+data_type  = 'relative'
+data_dir = 'output_data_rs_abs_24Oct2025'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
-n_splits = 1
+n_splits = 100
+
+if data_type == 'absolute':
+    data_dir = 'output_data_rs_abs_24Oct2025'
+elif data_type == 'relative':
+    data_dir = 'output_data_rs_rel_22Oct2025'
+
+os.makedirs(f'{working_dir}/models_and_histograms', exist_ok=True)
 
 for gender in ['male', 'female']:
 
     model_slope = pd.read_csv(os.path.join
-                              (working_dir, os.path.join(working_dir, output_data_dir), f'{gender}_{n_splits}_splits_allsplits_slopes.csv'))
+                              (working_dir, os.path.join(working_dir, data_dir), f'{gender}_{n_splits}_splits_allsplits_slopes.csv'))
 
     model_ymin = pd.read_csv(os.path.join
-                              (working_dir, os.path.join(working_dir, output_data_dir), f'{gender}_{n_splits}_splits_ymin.csv'))
+                              (working_dir, os.path.join(working_dir, data_dir), f'{gender}_{n_splits}_splits_ymin.csv'))
+
+    if data_type == "absolute":
+        model_ymin = model_ymin / 100.0
 
     model_slope.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
     model_ymin.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
@@ -43,10 +54,12 @@ for gender in ['male', 'female']:
         for reg in model_slopes_dict[band].columns:
             slopes_reg = model_slopes_dict[band].loc[:, reg]
             lower_bound, upper_bound = np.percentile(slopes_reg.to_numpy(), [2.5, 97.5])
+
             if lower_bound < 0 < upper_bound:
                 df_sig.loc[band, reg] = 0
             else:
                 df_sig.loc[band, reg] = 1
+
 
     df_sig = df_sig.astype(int)
 
@@ -80,35 +93,17 @@ for gender in ['male', 'female']:
             ages = np.array([agemin, agemax])
 
             # Compute predicted values using the line equation
-            predicted = ymin + slope * (ages - agemin)
+            y_pred= ymin + slope * (ages - agemin)
 
             # Plot
-            plt.plot(ages/age_conversion_factor, predicted, label='Predicted line', color='blue')
-            plt.xlabel('Age')
-            plt.ylabel('Predicted Value')
-            plt.title('Predicted Value vs Age')
-            plt.legend()
-            plt.show()
+            # plt.plot(ages/age_conversion_factor, y_pred, label='Predicted line', color='blue')
+            # plt.xlabel('Age')
+            # plt.ylabel('Predicted Value')
+            # plt.title('Predicted Value vs Age')
+            # plt.legend()
+            # plt.show()
 
-            pchange = slope  * (agemax - agemin) / ymin
-
-            # # Create dummy covariate matrices with bspline values and save to file
-            # dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots, working_dir)
-            # # Load dummy covariate matrix
-            # dummy_cov = np.loadtxt(dummy_cov_file_path)
-            #
-            # # remove last row which has erroneous bspline values
-            # dummy_cov = dummy_cov[:-1]
-            #
-            # # Open model parameter file
-            # with open(os.path.join(model_path, 'NM_0_0_estimate.pkl'), 'rb') as file:
-            #     data = pickle.load(file)
-            #
-            # # Calculate predictions from model based on covariate data
-            # y_pred = np.dot(dummy_cov, data.blr.m)
-            #
-            # # calculate percent change with age this brain region
-            # pchange = (y_pred[-1] - y_pred[0]) / y_pred[0] * 100.00
+            pchange = slope/ymin* (agemax-agemin)* 100.0
 
             if '-lh' in region:
                 r = region.replace('-lh', '_left')
@@ -118,18 +113,35 @@ for gender in ['male', 'female']:
             if df_sig.loc[band, region] != 0:
                 change_dict[r] = pchange
 
-            # if plot_model:
-            #     plt.figure()
-            #     if gender == 'male':
-            #         c = 'b'
-            #     else:
-            #         c = 'crimson'
-            #     # plot model for this brain region
-            #     plt.plot(dummy_cov[:,0]/age_conversion_factor, y_pred, c)
-            #     plt.ylim([0, 40])
-            #     plt.title(f'Regions with Change in MEG power for {band} band in region {region}\n{gender} percent change = {pchange:.1f} sig change={df_sig.loc[band, region]}')
-            #     plt.show()
-            #     mystop=1
+            if plot_model:
+                if gender == 'male':
+                    c = 'b'
+                else:
+                    c = 'crimson'
+                # plot model for this brain region
+                fig = plt.figure(figsize=(12, 6))
+                plt.subplot(1,2,1)
+                plt.plot(ages/age_conversion_factor, y_pred, c)
+                plt.ylim([0, 40])
+                plt.title(f'Regions with Change in MEG power for\n {band} band in region {region}\n{gender} percent change = {pchange:.1f}\nslope = {slope * age_conversion_factor:.3f} sig change={df_sig.loc[band, region]}')
+                plt.tight_layout()
+
+                plt.subplot(1, 2, 2)
+                slopes_reg = model_slopes_dict[band].loc[:, region]
+                lower_bound, upper_bound = np.percentile(slopes_reg.to_numpy(), [2.5, 97.5])
+                plt.hist(slopes_reg * age_conversion_factor)
+                plt.plot([lower_bound * age_conversion_factor, lower_bound * age_conversion_factor], [0, 20], 'r')
+                plt.plot([upper_bound * age_conversion_factor, upper_bound * age_conversion_factor], [0, 20], 'r')
+                plt.plot([0, 0], [0, 20], 'k')
+                plt.title(
+                    f'{band} {gender} {region} sig = {df_sig.loc[band, region]}\nHistogram of slopes\nlower_bound = {lower_bound * age_conversion_factor:.2f} upper_bound = {upper_bound * age_conversion_factor:.2f}')
+                plt.tight_layout()
+                plt.show()
+                # fname = os.path.join(working_dir, 'models_and_histograms', f'{band}_{gender}_{region}_plot_of_model_with_slope_and_histogram_of_slopes.png')
+                # plt.savefig(fname)
+                # plt.close()
+
+            print(f'{band} {region} {gender} slope = {slope*age_conversion_factor: .3f} percent change = {pchange:.1f} sig change = {df_sig.loc[band, region]}')
 
         dict_to_plot = change_dict.copy()
 
@@ -140,7 +152,7 @@ for gender in ['male', 'female']:
                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
 
         # Write regions showing significant change with age to file
-        with open(f'{os.path.join(working_dir, output_data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+        with open(f'{os.path.join(working_dir, data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
                   'w') as file:
             for key in change_dict.keys():
                 file.write(f'{key} {change_dict[key]}\n')
