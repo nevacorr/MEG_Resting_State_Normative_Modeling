@@ -16,7 +16,7 @@ plot_model = 0
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
-data_type  = 'relative'
+data_type  = 'absolute'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
@@ -89,26 +89,21 @@ for gender in ['male', 'female']:
         ax.set_ylabel('Predicted Value')
         ax.set_title(
             f'{gender.capitalize()} — {band.capitalize()} Band')
-        # fig.tight_layout()
-        # fig.savefig(os.path.join(save_dir, f'{gender}_{band}_superimposed_lines.png'), dpi=200)
-        # plt.show()
-        # plt.close(fig)
 
-#         dict_to_plot = change_dict.copy()
-#
-#         cmap = hotcold(neutral=0.0)
-#
-#         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-#         myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-30, 30], figsize=(8,8),
-#                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
-#
-#         # Write regions showing significant change with age to file
-#         with open(f'{os.path.join(working_dir, data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
-#                   'w') as file:
-#             for key in change_dict.keys():
-#                 file.write(f'{key} {change_dict[key]}\n')
-#
-# plt.show()
+        dict_to_plot = change_dict.copy()
+        cmap = hotcold(neutral=0.0)
+        filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
+
+        # Plot brain map
+        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-30, 30], figsize=(8,8),
+                      title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
+
+        # Write regions showing significant change with age to file
+        with open(f'{os.path.join(working_dir, data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+                  'w') as file:
+            for key in change_dict.keys():
+                file.write(f'{key} {change_dict[key]}\n')
+
 
     fig.suptitle(f'{gender.capitalize()} - {data_type.capitalize()} Power Change With Age Across All Regions', fontsize=16)
     plt.tight_layout()
