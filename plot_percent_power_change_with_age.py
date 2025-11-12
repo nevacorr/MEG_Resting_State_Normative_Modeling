@@ -15,16 +15,19 @@ plot_model = 0
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
-data_type  = 'absolute'
+data_type  = 'relative'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
 n_splits = 100
 
 if data_type == 'absolute':
-    data_dir = 'output_data_rs_abs_24Oct2025'
+    data_dir = 'output_data_abs_Nov7'
 elif data_type == 'relative':
     data_dir = 'output_data_rs_rel_22Oct2025'
+# data_dir = 'output_data'
+
+allbands = ['theta', 'alpha', 'beta', 'gamma']
 
 os.makedirs(f'{working_dir}/models_and_histograms', exist_ok=True)
 
@@ -36,9 +39,6 @@ for gender in ['male', 'female']:
     model_ymin = pd.read_csv(os.path.join
                               (working_dir, os.path.join(working_dir, data_dir), f'{gender}_{n_splits}_splits_ymin.csv'))
 
-    if data_type == "absolute":
-        model_ymin = model_ymin / 100.0
-
     model_slope.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
     model_ymin.rename(columns={'Unnamed: 0': 'band'}, inplace=True)
 
@@ -47,7 +47,7 @@ for gender in ['male', 'female']:
 
     df_sig = pd.DataFrame()
 
-    for band in ['theta', 'alpha', 'beta', 'gamma']:
+    for band in allbands:
 
         # Calculate confidence intervals
         for reg in model_slopes_dict[band].columns:
@@ -59,12 +59,18 @@ for gender in ['male', 'female']:
             else:
                 df_sig.loc[band, reg] = 1
 
-
     df_sig = df_sig.astype(int)
 
-    bands = df_sig.index.to_list()
+    # Create figure with 1 row, 4 columns for bands
+    fig, axes = plt.subplots(1, 4, figsize=(24, 6), sharey=False)
+    axes = axes.flatten()
 
-    for bandnum, band in enumerate(bands):
+    # Read agemin and agemax from file
+    agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
+
+    for i, band in enumerate(allbands):
+        ax = axes[i]
+        all_pred_lines = []
 
         # Get a list of all region names by listing directories in model folder
         all_regions = df_sig.columns.tolist()
@@ -76,16 +82,9 @@ for gender in ['male', 'female']:
         # Initialize list to store p value associated with slope
         pvalue_age = []
 
-        for regnum, region in enumerate(all_regions):
-
-            model_path = (f'/home/toddr/neva/PycharmProjects/MEG Resting State Normative '
-                          f'Modeling/data/{gender}_{band}/ROI_models/{region}/Models/')
-
-            # Read agemin and agemax from file
-            agemin, agemax = read_ages_from_file(struct_var, working_dir, gender)
+        for region in all_regions:
 
             slope = model_slopes_dict[band][region].mean()
-
             ymin =  model_ymin_dict[band][region].mean()
 
             # Create array of ages
@@ -93,14 +92,9 @@ for gender in ['male', 'female']:
 
             # Compute predicted values using the line equation
             y_pred= ymin + slope * (ages - agemin)
+            all_pred_lines.append(y_pred)
 
-            # Plot
-            # plt.plot(ages/age_conversion_factor, y_pred, label='Predicted line', color='blue')
-            # plt.xlabel('Age')
-            # plt.ylabel('Predicted Value')
-            # plt.title('Predicted Value vs Age')
-            # plt.legend()
-            # plt.show()
+            ax.plot(ages / age_conversion_factor, y_pred, alpha=0.3, linewidth=1, color='gray')
 
             pchange = slope/ymin* (agemax-agemin)* 100.0
 
@@ -121,7 +115,7 @@ for gender in ['male', 'female']:
                 fig = plt.figure(figsize=(12, 6))
                 plt.subplot(1,2,1)
                 plt.plot(ages/age_conversion_factor, y_pred, c)
-                plt.ylim([0, 40])
+                # plt.ylim([0, 40])
                 plt.title(f'Regions with Change in MEG power for\n {band} band in region {region}\n{gender} percent change = {pchange:.1f}\nslope = {slope * age_conversion_factor:.3f} sig change={df_sig.loc[band, region]}')
                 plt.tight_layout()
 
@@ -140,23 +134,44 @@ for gender in ['male', 'female']:
                 # plt.savefig(fname)
                 # plt.close()
 
-            print(f'{band} {region} {gender} slope = {slope*age_conversion_factor: .3f} percent change = {pchange:.1f} sig change = {df_sig.loc[band, region]}')
+                print(f'{band} {region} {gender} slope = {slope * age_conversion_factor: .3f} percent change = {pchange:.1f} sig change = {df_sig.loc[band, region]}')
 
-        dict_to_plot = change_dict.copy()
+        # Compute average of lines across all regions
+        all_pred_lines = np.array(all_pred_lines)
+        avg_line = all_pred_lines.mean(axis=0)
 
-        cmap = hotcold(neutral=0.0)
+        # Plot average line
+        ax.plot(ages / age_conversion_factor, avg_line, color='blue', linewidth=2, label='Average')
 
-        filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
-        myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-30, 30], figsize=(8,8),
-                      title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
+        # After finishing all regions for this band, finalize the superimposed plot
+        ax.set_xlabel('Age (years)')
+        ax.set_ylabel('Predicted Value')
+        ax.set_title(
+            f'{gender.capitalize()} — {band.capitalize()} Band')
+        # fig.tight_layout()
+        # fig.savefig(os.path.join(save_dir, f'{gender}_{band}_superimposed_lines.png'), dpi=200)
+        # plt.show()
+        # plt.close(fig)
 
-        # Write regions showing significant change with age to file
-        with open(f'{os.path.join(working_dir, data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
-                  'w') as file:
-            for key in change_dict.keys():
-                file.write(f'{key} {change_dict[key]}\n')
+#         dict_to_plot = change_dict.copy()
+#
+#         cmap = hotcold(neutral=0.0)
+#
+#         filename = f'{gender.capitalize()} Regions with significant normative change with age in rsMEG {band} band'
+#         myggseg.plot_dk(dict_to_plot, save_dir, filename, cmap=cmap, background='k', edgecolor='w', bordercolor='gray', vminmax=[-30, 30], figsize=(8,8),
+#                       title=f'{gender.capitalize()} Percent {band.capitalize()} Band Power Change in Regions with\nSignificant Normative Change From 9 to 17 Years of Age')
+#
+#         # Write regions showing significant change with age to file
+#         with open(f'{os.path.join(working_dir, data_dir)}/{gender}_regions_showing_significant_change_with_age_precovid_{band}_band.txt',
+#                   'w') as file:
+#             for key in change_dict.keys():
+#                 file.write(f'{key} {change_dict[key]}\n')
+#
+# plt.show()
+    fig.suptitle(f'{gender.capitalize()} - {data_type.capitalize()} Power Change With Age Across All Regions', fontsize=16)
+    plt.tight_layout()
+    plt.show(block=False)
 
-plt.show()
 
 mystop=1
 
