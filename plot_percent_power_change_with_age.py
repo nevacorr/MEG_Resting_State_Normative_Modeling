@@ -104,9 +104,8 @@ for gender in ['male', 'female']:
             for key in change_dict.keys():
                 file.write(f'{key} {change_dict[key]}\n')
 
-
     fig.suptitle(f'{gender.capitalize()} - {data_type.capitalize()} Power Change With Age Across All Regions', fontsize=16)
-    plt.tight_layout()
+    fig.savefig(os.path.join(save_dir, f'{os.path.join(working_dir, data_dir)}/{gender}_{data_type}_power_change_with_age.png'), dpi=300, bbox_inches='tight')
     plt.show(block=False)
 
 
