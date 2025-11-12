@@ -168,7 +168,7 @@ def plot_dk(data, path, filename, cmap='Spectral', background='k', edgecolor='w'
     _render_regions_(files, ax, 'gray', edgecolor)
 
     # A colorbar is added
-    # _add_colorbar_(ax, cmap, norm, edgecolor, fontsize*0.75, ylabel)
+    _add_colorbar_(ax, cmap, norm, edgecolor, fontsize*0.75, ylabel)
 
     fig.savefig(f'{path}/{filename}.png')
 
