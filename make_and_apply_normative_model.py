@@ -10,7 +10,7 @@ import pickle
 
 def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                spline_knots, data_dir, working_dir, ct_data_dir, MEG_filename,
-                               subjects_to_exclude, bands, n_splits, lobes_only):
+                               subjects_to_exclude, bands, n_splits, lobes_only, data_type):
 
     # load all rs MEG data
     rsd_v1, rsd_v2, all_subjects_orig, sub_v1_only_orig, sub_v2_only_orig \
@@ -42,13 +42,14 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     # Scale response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
 
-    # # Multiply valuesin the specified columns by 100 (relative data)
-    rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
-    rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
-
-    # Multiply valuesin the specified columns by 100 (absolute data)
-    # rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] / 100.000
-    # rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] / 100.000
+    if data_type == 'relative':
+        # # Multiply valuesin the specified columns by 100 (relative data)
+        rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
+        rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
+    elif data_type == 'absolute':
+        # Divide value sin the specified columns by 100 (absolute data)
+        rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] / 100.000
+        rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] / 100.000
 
      # show bar plots with number of subjects per age group in pre-COVID data
     if show_nsubject_plots:

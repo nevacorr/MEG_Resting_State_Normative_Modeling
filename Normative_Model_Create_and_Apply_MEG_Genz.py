@@ -10,14 +10,13 @@ from make_and_apply_normative_model import make_and_apply_normative_model
 from helper_functions_MEG import recreate_folder, copy_old_files_to_backup_folder
 
 struct_var = 'meg'
-n_splits = 100           # number of train/test splits
-show_plots = 0         #set to 1 to show training and test data spline fit plots.
+n_splits = 100         # number of train/test splits
+show_plots = 0        #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
-# MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
-MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_vfix_alln.csv'
+data_type = 'relative' #options: relative, absolute
 data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
 working_dir = os.getcwd()
 
@@ -28,6 +27,11 @@ subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is 
 bands = ['theta', 'alpha', 'beta', 'gamma']
 
 Z2_all_splits = {}
+
+if data_type == 'relative':
+    MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
+elif data_type == 'absolute':
+    MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_vfix_alln.csv'
 
 # Create directory for storing subject number bar plots
 recreate_folder(os.path.join(working_dir, 'data'))
@@ -41,7 +45,7 @@ for gender in ['male', 'female']:
 
         Z2_all_splits[gender] = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                              spline_knots, data_dir, working_dir, ct_data_dir, MEG_resting_state_filename,
-                                             subjects_to_exclude, bands, n_splits, lobes_only)
+                                             subjects_to_exclude, bands, n_splits, lobes_only, data_type)
     # else:
     #
     #     with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'rb') as f:
