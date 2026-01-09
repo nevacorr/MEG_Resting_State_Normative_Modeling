@@ -32,12 +32,12 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
     rsd_v2.columns = rsd_v1.columns.str.replace(r'^t2_', '', regex=True)
 
-# ### FOR DEBUGGING ONLY
-#     columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
-#                        'beta-bankssts-lh', 'gamma-bankssts-lh']
-#     rsd_v1 = rsd_v1[columns_to_keep]
-#     rsd_v2 = rsd_v2[columns_to_keep]
-#     ############
+    ### FOR DEBUGGING ONLY
+    columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
+                       'beta-bankssts-lh', 'gamma-bankssts-lh']
+    rsd_v1 = rsd_v1[columns_to_keep]
+    rsd_v2 = rsd_v2[columns_to_keep]
+    ############
 
     # Scale response variables
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
@@ -113,22 +113,22 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     Z2_all_splits_dict = make_model(rsd_v1, rsd_v2, struct_var, n_splits, train_set_array, test_set_array,
                show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, gender, bands, lobes_only)
 
-    # # For each band, average Z scores for the same subject across splits
-    # for band, df in Z2_all_splits_dict.items():
-    #     # Drop the 'split' column if it exists
-    #     if 'split' in df.columns:
-    #         df = df.drop(columns='split')
-    #
-    #     # Select the region columns
-    #     region_cols = [col for col in df.columns if '-lh' in col or '-rh' in col]
-    #
-    #     # Group by subject_id and average only region columns
-    #     averaged_df = df.groupby('subject_id_test')[region_cols].mean().reset_index()
-    #
-    #     # Store the result back in the dictionary
-    #     Z2_all_splits_dict[band] = averaged_df
-    #
-    #     with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'wb') as f:
-    #         pickle.dump(Z2_all_splits_dict, f)
+    # For each band, average Z scores for the same subject across splits
+    for band, df in Z2_all_splits_dict.items():
+        # Drop the 'split' column if it exists
+        if 'split' in df.columns:
+            df = df.drop(columns='split')
+
+        # Select the region columns
+        region_cols = [col for col in df.columns if '-lh' in col or '-rh' in col]
+
+        # Group by subject_id and average only region columns
+        averaged_df = df.groupby('subject_id_test')[region_cols].mean().reset_index()
+
+        # Store the result back in the dictionary
+        Z2_all_splits_dict[band] = averaged_df
+
+        with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'wb') as f:
+            pickle.dump(Z2_all_splits_dict, f)
 
     return Z2_all_splits_dict

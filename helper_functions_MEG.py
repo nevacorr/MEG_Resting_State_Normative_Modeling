@@ -141,7 +141,7 @@ def plot_data_with_spline_one_gender(gender, datastr, band, cov_file, resp_file,
             .format(working_dir, dirdata, gender, band, gender, band, roi.replace(band+'-', ''), datastr))
     if showplots == 1:
         plt.show()
-    plt.close(fig)
+    # plt.close(fig)
 
 def plot_y_v_yhat(cov_file, resp_file, yhat, typestring, gender, band, roi, Rho, EV, working_dir):
     cov_data = np.loadtxt(cov_file)
