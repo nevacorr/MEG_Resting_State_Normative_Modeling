@@ -16,7 +16,7 @@ from normative_edited import predict
 from joblib import load
 
 def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir, rsd_v2, roi_ids, dirdata, dirpredict, sex, band):
+                                working_dir, rsd_v2, dirdata, dirpredict, sex, band):
 
     rsd_v2 =rsd_v2[rsd_v2['subject'] < 400]
 
@@ -95,8 +95,8 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
 
     ####Make Predictions of Brain Structural Measures Post-Covid based on Pre-Covid Normative Model
 
-    for regnum, roi in enumerate(roi_ids):
-        print('Running ROI:', roi)
+    for roi in roi_ids:
+        print(f'Running ROI:', roi, 'predict for Band {band}')
         roi_dir = os.path.join(predict_files_dir, roi)
         model_dir = os.path.join(training_dir, roi, 'Models')
         os.chdir(roi_dir)
