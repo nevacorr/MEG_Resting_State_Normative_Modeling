@@ -1,0 +1,32 @@
+
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="PYTHON_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <!-- Source folder (optional, you can mark a folder as sources if needed) -->
+      <!-- <sourceFolder url="file://$MODULE_DIR$/src" isTestSource="false" /> -->
+
+      <!-- Exclude folders to prevent indexing hangs -->
+      <excludeFolder url="file://$MODULE_DIR$/.venv" />
+      <excludeFolder url="file://$MODULE_DIR$/data" />
+      <excludeFolder url="file://$MODULE_DIR$/data_1sample" />
+      <excludeFolder url="file://$MODULE_DIR$/data_abs_Nov7" />
+      <excludeFolder url="file://$MODULE_DIR$/data_bootstrap" />
+      <excludeFolder url="file://$MODULE_DIR$/male_theta" />
+      <excludeFolder url="file://$MODULE_DIR$/old" />
+      <excludeFolder url="file://$MODULE_DIR$/old_output_data" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data_abs_Nov7" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data.bak" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data_bak" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data_one_sample" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data_rs_abs_24Oct2025" />
+      <excludeFolder url="file://$MODULE_DIR$/output_data_rs_rel_22Oct2025" />
+    </content>
+
+    <!-- Use inherited JDK / Python SDK -->
+    <orderEntry type="inheritedJdk" />
+
+    <!-- Mark the main project folder as a source folder -->
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
