@@ -33,10 +33,10 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     rsd_v2.columns = rsd_v1.columns.str.replace(r'^t2_', '', regex=True)
 
     ### FOR DEBUGGING ONLY
-    columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
-                       'beta-bankssts-lh', 'gamma-bankssts-lh']
-    rsd_v1 = rsd_v1[columns_to_keep]
-    rsd_v2 = rsd_v2[columns_to_keep]
+    # columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
+    #                    'beta-bankssts-lh', 'gamma-bankssts-lh']
+    # rsd_v1 = rsd_v1[columns_to_keep]
+    # rsd_v2 = rsd_v2[columns_to_keep]
     ############
 
     # Scale response variables
