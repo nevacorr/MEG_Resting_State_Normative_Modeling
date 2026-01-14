@@ -114,10 +114,10 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
         dummy_cov_file_path= create_dummy_design_matrix_one_gender(agemin, agemax,
                                                     spline_order, spline_knots, working_dir)
 
-        plot_data_with_spline_one_gender(sex, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
-                    dummy_cov_file_path, model_dir, roi, show_plots, working_dir, dirdata)
-
-        plt.show()
+        # plot_data_with_spline_one_gender(sex, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
+        #             dummy_cov_file_path, model_dir, roi, show_plots, working_dir, dirdata)
+        #
+        # plt.show()
 
         Z_score_test_matrix[roi] = Z
 
