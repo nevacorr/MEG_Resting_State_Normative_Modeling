@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
   <component name="ChangeListManager">
     <list default="true" id="8dfdadc1-414a-47a5-92cb-3fa6ad7d698c" name="Changes" comment="backup .idea files">
-      <change beforePath="$PROJECT_DIR$/.idea/Project.iml" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/Normative_Model_Create_and_Apply_MEG_Genz.py" beforeDir="false" afterPath="$PROJECT_DIR$/Normative_Model_Create_and_Apply_MEG_Genz.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/apply_normative_model_time2.py" beforeDir="false" afterPath="$PROJECT_DIR$/apply_normative_model_time2.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/make_and_apply_normative_model.py" beforeDir="false" afterPath="$PROJECT_DIR$/make_and_apply_normative_model.py" afterDir="false" />
@@ -64,8 +66,27 @@
       <option name="project" value="LOCAL" />
       <updated>1768428062974</updated>
     </task>
-    <option name="localTasksCounter" value="2" />
+    <task id="LOCAL-00002" summary="backup .idea files">
+      <option name="closed" value="true" />
+      <created>1768428331770</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1768428331770</updated>
+    </task>
+    <option name="localTasksCounter" value="3" />
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <MESSAGE value="backup .idea files" />
