@@ -193,15 +193,6 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
     # Concatenate subject_id once + all bands
     Z_male = pd.concat([subject_ids_male] + band_dfs_male, axis=1)
     Z_female = pd.concat([subject_ids_female] + band_dfs_female, axis=1)
-    #
-    # # add gender to Z score dataframe
-    # Z_male['gender'] = 1
-    # Z_female['gender'] = 2
-    # #move the gender column to the front of the dataframes
-    # gender = Z_male.pop('gender')
-    # Z_male.insert(1, 'gender', gender)
-    # gender = Z_female.pop('gender')
-    # Z_female.insert(1, 'gender', gender)
 
     #get list of all brain regions
     roi_ids = [col for col in Z_male.columns if col not in sinfo]
@@ -244,11 +235,11 @@ def plot_and_compute_zcores_by_gender(Z_timepoint2, working_dir, bands):
     minf = Z_female[roi_ids].min(axis=0).min()
     minm = Z_male[roi_ids].min(axis=0).min()
 
-    binmin = min(minf, minm)
-    binmax = max(maxf, maxm)
+    # binmin = min(minf, minm)
+    # binmax = max(maxf, maxm)
 
-    # binmin = -3.5
-    # binmax = 3.5
+    binmin = -3.5
+    binmax = 3.5
 
     binedges = np.linspace(binmin-0.5, binmax+0.5, 24)
 
