@@ -4,12 +4,10 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="8dfdadc1-414a-47a5-92cb-3fa6ad7d698c" name="Changes" comment="backup idea file">
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+    <list default="true" id="8dfdadc1-414a-47a5-92cb-3fa6ad7d698c" name="Changes" comment="remove add gender">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/MakeFigureShowingRegionsWithSignificantPostCOVIDDeviations.py" beforeDir="false" afterPath="$PROJECT_DIR$/MakeFigureShowingRegionsWithSignificantPostCOVIDDeviations.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Normative_Model_Create_and_Apply_MEG_Genz.py" beforeDir="false" afterPath="$PROJECT_DIR$/Normative_Model_Create_and_Apply_MEG_Genz.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/plot_and_compute_zdistributions.py" beforeDir="false" afterPath="$PROJECT_DIR$/plot_and_compute_zdistributions.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/plot_percent_power_change_with_age.py" beforeDir="false" afterPath="$PROJECT_DIR$/plot_percent_power_change_with_age.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -116,7 +114,31 @@
       <option name="project" value="LOCAL" />
       <updated>1768428922903</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="plot positive negative regions">
+      <option name="closed" value="true" />
+      <created>1768509852645</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1768509852645</updated>
+    </task>
+    <task id="LOCAL-00009" summary="update idea files">
+      <option name="closed" value="true" />
+      <created>1768509869401</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1768509869401</updated>
+    </task>
+    <task id="LOCAL-00010" summary="remove add gender">
+      <option name="closed" value="true" />
+      <created>1768509903024</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1768509903024</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -137,7 +159,10 @@
     <MESSAGE value="comment out debugging code" />
     <MESSAGE value="comment out plot spline code" />
     <MESSAGE value="backup idea file" />
-    <option name="LAST_COMMIT_MESSAGE" value="backup idea file" />
+    <MESSAGE value="plot positive negative regions" />
+    <MESSAGE value="update idea files" />
+    <MESSAGE value="remove add gender" />
+    <option name="LAST_COMMIT_MESSAGE" value="remove add gender" />
   </component>
   <component name="XDebuggerManager">
     <breakpoint-manager>
