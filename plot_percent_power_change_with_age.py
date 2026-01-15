@@ -23,7 +23,7 @@ spline_knots = 2
 n_splits = 100
 
 if data_type == 'absolute':
-    data_dir = 'output_data_abs_Nov7'
+    data_dir = 'output_data'
 elif data_type == 'relative':
     data_dir = 'output_data_rs_rel_22Oct2025'
 
