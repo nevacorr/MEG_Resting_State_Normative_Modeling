@@ -46,7 +46,7 @@ male_dict = {}
 sexes = ['female', 'male']
 
 # Define the colors for each integer value
-colors = ['darkorange', 'steelblue', 'mediumseagreen', 'mediumpurple']
+colors = ['steelblue', 'yellow']
 cmap = ListedColormap(colors)
 
 for sex in sexes:
