@@ -16,16 +16,16 @@ plot_model = 0
 age_conversion_factor = 365.25
 working_dir = os.getcwd()
 save_dir = working_dir + '/plots'
-data_type  = 'absolute'
+data_type  = 'relative'
 struct_var = 'meg'
 spline_order = 1
 spline_knots = 2
 n_splits = 100
 
 if data_type == 'absolute':
-    data_dir = 'output_data'
+    data_dir = ''
 elif data_type == 'relative':
-    data_dir = 'output_data_rs_rel_22Oct2025'
+    data_dir = 'output_data_bak'
 
 allbands = ['theta', 'alpha', 'beta', 'gamma']
 os.makedirs(f'{working_dir}/models_and_histograms', exist_ok=True)
