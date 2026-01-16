@@ -12,7 +12,7 @@ from helper_functions_MEG import recreate_folder, copy_old_files_to_backup_folde
 struct_var = 'meg'
 n_splits = 100         # number of train/test splits
 show_plots = 0        #set to 1 to show training and test data spline fit plots.
-show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
+show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
@@ -26,18 +26,19 @@ lobes_only = 0
 subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
 bands = ['theta', 'alpha', 'beta', 'gamma']
 
-Z2_all_splits = {}
+Z2_all_splits = {}    # Create directory for storing subject number bar plots
 
 if data_type == 'relative':
     MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_rel_vfix_alln_December2024.csv'
 elif data_type == 'absolute':
     MEG_resting_state_filename = '/home/toddr/neva/PycharmProjects/data_dir/genz_rs_power_vfix_alln.csv'
 
-# Create directory for storing subject number bar plots
-recreate_folder(os.path.join(working_dir, 'data'))
-recreate_folder(os.path.join(working_dir, 'predict_files'))
-copy_old_files_to_backup_folder(os.path.join(working_dir, 'output_data'), os.path.join(working_dir, 'output_data_bak'))
-recreate_folder(os.path.join(working_dir, 'output_data'))
+if run_make_norm_model:
+
+    # Create directory for storing subject number bar plots
+    recreate_folder(os.path.join(working_dir, 'data'))
+    recreate_folder(os.path.join(working_dir, 'predict_files'))
+    recreate_folder(os.path.join(working_dir, 'output_data'))
 
 for gender in ['male', 'female']:
 
