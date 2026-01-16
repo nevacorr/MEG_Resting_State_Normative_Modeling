@@ -149,8 +149,8 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 model_slope.loc[band, roi], ymin.loc[band, roi] = calc_model_slope(dummy_cov_file_path, nm)
 
                 # compute splines and superimpose on data. Show on screen or save to file depending on show_plots value.
-                # plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
-                #                       model_dir, roi, show_plots, working_dir, dirdata)
+                plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
+                                      model_dir, roi, show_plots, working_dir, dirdata)
 
             Z_time2[band] = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
                                 working_dir,rsd_v2, dirdata, dirpredict, sex, band)
