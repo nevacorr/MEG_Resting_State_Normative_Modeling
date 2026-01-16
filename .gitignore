@@ -2,4 +2,4 @@
 *.txt
 make_time1_normative_model.py
 make_time1_normative_model_bootstrap.py
-workspace.xml
+.idea/workspace.xml
