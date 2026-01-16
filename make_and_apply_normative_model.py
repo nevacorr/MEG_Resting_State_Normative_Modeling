@@ -9,7 +9,7 @@ from make_model import make_model
 import pickle
 
 def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
-                               spline_knots, data_dir, working_dir, ct_data_dir, MEG_filename,
+                               spline_knots, working_dir, ct_data_dir, MEG_filename,
                                subjects_to_exclude, bands, n_splits, lobes_only, data_type):
 
     # load all rs MEG data

@@ -17,7 +17,6 @@ spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
 ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
 data_type = 'relative' #options: relative, absolute
-data_dir = '/home/toddr/neva/PycharmProjects/data_dir'
 working_dir = os.getcwd()
 
 run_make_norm_model = 1
@@ -45,7 +44,7 @@ for gender in ['male', 'female']:
     if run_make_norm_model:
 
         Z2_all_splits[gender] = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
-                                             spline_knots, data_dir, working_dir, ct_data_dir, MEG_resting_state_filename,
+                                             spline_knots, working_dir, ct_data_dir, MEG_resting_state_filename,
                                              subjects_to_exclude, bands, n_splits, lobes_only, data_type)
     else:
 
