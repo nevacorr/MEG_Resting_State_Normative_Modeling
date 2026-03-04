@@ -12,20 +12,21 @@ import numpy as np
 import pickle
 from statsmodels.stats.multitest import multipletests
 import statsmodels.formula.api as smf
+from scipy import stats
 
-frontal_reg = ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral',
-               'frontalpole',
-               'rostralanteriorcingulate', 'caudalanteriorcingulate']
+lobes_map = {
+    'frontal': ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
+               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral','frontalpole',
+               'rostralanteriorcingulate', 'caudalanteriorcingulate'],
 
-parietal_reg = ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
-                'posteriorcingulate',
-                'isthmuscingulate']
+    'parietal': ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
+                'posteriorcingulate','isthmuscingulate'],
 
-temporal_reg = ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
-                'entorhinal', 'temporalpole', 'parahippocampal']
+    'temporal': ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
+                'entorhinal', 'temporalpole', 'parahippocampal'],
 
-occipital_reg = ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
+    'occipital': ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
+}
 
 
 bands = ['beta', 'gamma']
@@ -52,67 +53,143 @@ for band in bands:
 
     Z2_CT_MEG = pd.merge(Z_time2_CT, Z2_MEG, on='participant_id', how='inner')
 
-    df = Z2_CT_MEG.copy()
-
-    results = []
-
-    for region in region_list:
-        ct_col = f'cortthick-lh-{region}'
-        meg_col = f'{region}-lh'
-
-        r, p = pearsonr(df[ct_col], df[meg_col])
-
-        results.append({
-            'region': region,
-            'r': r,
-            'p': p
-        })
-
-    results_df = pd.DataFrame(results)
-    rejected, pvals_fdr, _, _ = multipletests(results_df['p'], alpha=0.05, method='fdr_bh')
-    results_df['p_fdr'] = pvals_fdr
-    results_df['significant_fdr'] = rejected
-
+    # ---------------------------
+    # Aggregate by lobe + hemisphere
+    # ---------------------------
     long_rows = []
 
-    # loop through each participant
     for _, row in Z2_CT_MEG.iterrows():
         subject = row['participant_id']
 
-        # loop through regions
-        for region in region_list:  # region_list from CT/MET columns
+        for lobe, regions in lobes_map.items():
             for hemi in ['lh', 'rh']:
-                ct_col = f'cortthick-{hemi}-{region}'
-                meg_col = f'{region}-{hemi}'
+                # CT and MEG columns for this lobe + hemisphere
+                ct_cols = [f'cortthick-{hemi}-{r}' for r in regions if f'cortthick-{hemi}-{r}' in row]
+                meg_cols = [f'{r}-{hemi}' for r in regions if f'{r}-{hemi}' in row]
 
-                long_rows.append({
-                    'subject': subject,
-                    'region': f'{region}-{hemi}',
-                    'CT_abs': abs(row[ct_col]),
-                    'MEG_abs': abs(row[meg_col])
-                })
+                if ct_cols and meg_cols:
+                    ct_avg = row[ct_cols].abs().mean()
+                    meg_avg = row[meg_cols].abs().mean()
 
+                    # lobe + hemi combined label
+                    lobe_hemi = f"{lobe}_{hemi}"
+
+                    long_rows.append({
+                        'subject': subject,
+                        'lobe_hemi': lobe_hemi,
+                        'CT_abs': ct_avg,
+                        'MEG_abs': meg_avg
+                    })
     # make dataframe
-    long_df = pd.DataFrame(long_rows)
-    #
+    lobe_df = pd.DataFrame(long_rows)
 
-    # 1. Compute within-subject MEG deviations
-    long_df['MEG_within'] = long_df.groupby('subject')['MEG_abs'].transform(lambda x: x - x.mean())
+    # ---------------------------
+    # Within-subject centering of MEG
+    # ---------------------------
+    lobe_df['MEG_within'] = lobe_df.groupby('subject')['MEG_abs'].transform(lambda x: x - x.mean())
 
-    # 2. Optionally, center CT as well if you want intercepts at mean CT
-    # long_df['CT_c'] = long_df.groupby('participant_id')['CT_abs'].transform(lambda x: x - x.mean())
+    # # ---------------------------
+    # # Fit mixed model
+    # # ---------------------------
+    # model = smf.mixedlm(
+    #     "CT_abs ~ 0 + MEG_within * C(lobe_hemi)",  # fixed effect includes left/right lobes
+    #     lobe_df,
+    #     groups=lobe_df["subject"],  # random intercept per subject
+    # )
 
-    # 3. Fit the mixed model
-    # region is fixed, subject is random intercept, MEG_within is the predictor
     model = smf.mixedlm(
-        "CT_abs ~ MEG_within + C(region)",  # fixed effects
-        long_df,
-        groups=long_df["subject"]  # random intercept per subject
+        "CT_abs ~ 0 + MEG_within * C(lobe_hemi)",  # fixed effect includes left/right lobes
+        lobe_df,
+        groups=lobe_df["subject"],  # random intercept per subject
+        re_formula="1+MEG_within"  # add random slopes
     )
 
-    result = model.fit()
 
+    result = model.fit()
     print(result.summary())
+
+    # Fit the model if not already done
+    fitted_model = model.fit()
+
+    fe_params = fitted_model.fe_params
+
+    # Get lobe names
+    lobe_names = [c.split('[')[1][:-1] for c in fe_params.index if c.startswith('C(lobe_hemi)')]
+
+    # Base slope for reference lobe
+    base_slope = fe_params['MEG_within']
+
+    # Build fixed-effect intercepts and slopes per lobe
+    fixed_effects = {}
+    for lobe in lobe_names:
+        intercept = fe_params[f'C(lobe_hemi)[{lobe}]']
+        interaction_term = f'MEG_within:C(lobe_hemi)[T.{lobe}]'
+        slope = base_slope + fe_params[interaction_term] if interaction_term in fe_params else base_slope
+        fixed_effects[lobe] = {'intercept': intercept, 'slope': slope}
+
+    plt.figure(figsize=(10, 6))
+
+    # x-axis range = full MEG_within range in your data
+    x = np.linspace(lobe_df['MEG_within'].min(), lobe_df['MEG_within'].max(), 100)
+
+    # Plot fixed-effect lines
+    for lobe, params in fixed_effects.items():
+        y = params['intercept'] + params['slope'] * x
+        plt.plot(x, y, label=lobe, linewidth=2)
+
+    # Overlay individual subject points lightly
+    for lobe in lobe_df['lobe_hemi'].unique():
+        sub_df = lobe_df[lobe_df['lobe_hemi'] == lobe]
+        plt.scatter(sub_df['MEG_within'], sub_df['CT_abs'], alpha=0.3, color='gray')
+
+    plt.xlabel('MEG_within')
+    plt.ylabel('CT_abs')
+    plt.title('Fixed-effect slopes per lobe_hemisphere with subject points')
+    plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
+    plt.tight_layout()
+    plt.show()
+
+    coef_df = result.params.reset_index()
+    coef_df.columns = ['term', 'coef']
+
+    # Separate main effect (MEG_within) and interaction terms
+    main_meg = coef_df.loc[coef_df['term'] == 'MEG_within', 'coef'].values[0]
+
+    slopes = {}
+
+    for term, coef in coef_df.itertuples(index=False):
+        if term.startswith('MEG_within:C(lobe_hemi)'):
+            # Extract lobe_hemi name
+            lobe = term.split('[')[1].strip(']')
+            slopes[lobe] = main_meg + coef
+        elif term == 'MEG_within':
+            # Reference lobe (alphabetical first)
+            ref_lobe = 'reference'
+            slopes[ref_lobe] = main_meg
+
+    # 3. Compute z-values and p-values for slopes
+    # z = coef / std_err (need to combine main + interaction)
+    # We'll approximate by summing variances (main + interaction) for simplicity
+    # Get covariance matrix
+    cov = result.cov_params()
+
+    slope_stats = []
+    for lobe, slope in slopes.items():
+        if lobe == 'reference':
+            se = np.sqrt(cov.loc['MEG_within', 'MEG_within'])
+        else:
+            inter_term = f'MEG_within:C(lobe_hemi)[{lobe}]'
+            se = np.sqrt(
+                cov.loc['MEG_within', 'MEG_within'] +
+                cov.loc[inter_term, inter_term] +
+                2 * cov.loc['MEG_within', inter_term]
+            )
+        z = slope / se
+        p = 2 * (1 - stats.norm.cdf(np.abs(z)))
+        slope_stats.append({'lobe_hemi': lobe, 'slope': slope, 'SE': se, 'z': z, 'p': p})
+
+    slope_df = pd.DataFrame(slope_stats)
+    print(slope_df.sort_values('p'))
 
     mystop=1
 
