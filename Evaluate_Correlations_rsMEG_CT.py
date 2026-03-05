@@ -106,6 +106,7 @@ for band in bands:
 
 
     result = model.fit()
+    print(f"{capitalize(band)} Band")
     print(result.summary())
 
     # Fit the model if not already done
@@ -144,7 +145,7 @@ for band in bands:
 
     plt.xlabel('MEG_within')
     plt.ylabel('CT_abs')
-    plt.title('Fixed-effect slopes per lobe_hemisphere with subject points')
+    plt.title(f'{capitalize(band)} band: Fixed-effect slopes per lobe_hemisphere with subject points')
     plt.legend(bbox_to_anchor=(1.05, 1), loc='upper left')
     plt.tight_layout()
     plt.show()
