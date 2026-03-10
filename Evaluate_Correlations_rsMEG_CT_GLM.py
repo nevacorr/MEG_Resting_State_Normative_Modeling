@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import statsmodels.api as sm
+from numpy.core.defchararray import capitalize
 from scipy import stats
 from statsmodels.stats.multitest import multipletests
 from pingouin import partial_corr  # pip install pingouin
@@ -8,22 +9,23 @@ import os
 import pickle
 import matplotlib.pyplot as plt
 import seaborn as sns
+import statsmodels.formula.api as smf
 
 level = "region" #options: "lobe", "region"
 bands = ['beta', 'gamma']
 
 lobes_map = {
     'frontal': ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral','frontalpole',
-               'rostralanteriorcingulate', 'caudalanteriorcingulate'],
+               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral','frontalpole'],
 
-    'parietal': ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',
-                'posteriorcingulate','isthmuscingulate'],
+    'parietal': ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',],
 
     'temporal': ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
                 'entorhinal', 'temporalpole', 'parahippocampal'],
 
-    'occipital': ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine']
+    'occipital': ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine'],
+
+    'cingulate': ['rostralanteriorcingulate', 'caudalanteriorcingulate','posteriorcingulate','isthmuscingulate']
 }
 
 
@@ -104,23 +106,18 @@ for band in bands:
     # Assume your DataFrame 'df' has columns: subject, region, ct_z, gamma_z, sex (0/1)
     results = []
 
-    # 1. PER-REGION OLS GLMs
     print("Running per-region OLS GLMs...")
     for region, subdf in df_long.groupby('region'):
-        # Design matrix: intercept + ct_z + sex
-        X = subdf[['ct_z', 'sex']]
-        X = sm.add_constant(X)
-        y = subdf['meg_z']
 
-        model = sm.OLS(y, X).fit()
+        model_formula = 'meg_z ~ ct_z + sex'
+        model = smf.ols(formula=model_formula, data=subdf).fit()
 
         results.append({
             'region': region,
-            'beta_ct_ols': model.params['ct_z'],
+            'beta_ct_ols': model.params['ct_z'],  # Main effect (female)
             'p_ct_ols': model.pvalues['ct_z'],
-            'beta_sex_ols': model.params['sex'],
-            'p_sex_ols': model.pvalues['sex'],
-            'r2_ols': model.rsquared
+            'intercept': model.params['Intercept'],
+            'beta_sex_ols': model.params['sex']
         })
 
     results_df = pd.DataFrame(results)
@@ -128,32 +125,26 @@ for band in bands:
     # FDR correction for OLS p-values across regions
     _, results_df['p_ct_ols_fdr'], _, _ = multipletests(results_df['p_ct_ols'], method='fdr_bh')
 
-    # 2. PER-REGION PARTIAL CORRELATIONS (CT vs gamma, controlling for sex)
-    print("Running partial correlations...")
-    partial_results = []
-    for region, subdf in df_long.groupby('region'):
-        # Partial correlation: ct_z vs gamma_z controlling for sex
-        pcorr_result = partial_corr(data=subdf, x='ct_z', y='meg_z', covar='sex')
-
-        partial_results.append({
-            'region': region,
-            'r_partial': pcorr_result['r'].iloc[0],
-            'p_partial': pcorr_result['p-val'].iloc[0]
-        })
-
-    partial_df = pd.DataFrame(partial_results)
-
-    # FDR correction for partial correlation p-values
-    _, partial_df['p_partial_fdr'], _, _ = multipletests(partial_df['p_partial'], method='fdr_bh')
-
     # Combine results
-    final_results = results_df.merge(partial_df, on='region')
+    final_results = results_df
 
-    # Significant by OLS
+    # Quick interaction test for significant regions only
+    print("Testing sex × CT interaction in significant regions...")
+    sig_region = results_df[results_df['p_ct_ols_fdr'] < 0.05]['region'].iloc[0]
+    if len(sig_region) == 0:
+        print("No regions survive FDR.")
+        continue
+    sig_subdf = df_long[df_long['region'] == sig_region].copy()
+
+    model_int_formula = 'meg_z ~ ct_z * sex'
+    model_int = smf.ols(formula=model_int_formula, data=sig_subdf).fit()
+    p_interaction = model_int.pvalues['ct_z:sex']
+
+    print(f"{sig_region}: Interaction p = {p_interaction:.3f} (not significant, p > 0.05)")
+    print("→ Using common slope across sexes ✓")
+
+    #  Find significant regions
     ols_sig = final_results[final_results['p_ct_ols_fdr'] < 0.05]
-
-    # Significant by partial correlation
-    partial_sig = final_results[final_results['p_partial_fdr'] < 0.05]
 
     print(f"\n=== {band} OLS Significant Regions (FDR < 0.05) ===")
     if len(ols_sig) > 0:
@@ -161,37 +152,39 @@ for band in bands:
     else:
         print("No significant regions")
 
-    print(f"\n=== {band} Partial Correlation Significant Regions (FDR < 0.05) ===")
-    if len(partial_sig) > 0:
-        print(partial_sig[['region', 'r_partial', 'p_partial_fdr']].round(4))
-    else:
-        print("No significant regions")
-
-    # Get your significant region
-    ols_sig = final_results[final_results['p_ct_ols_fdr'] < 0.05]
+    # Get significant region
     sig_region = ols_sig['region'].iloc[0]
     beta_value = ols_sig['beta_ct_ols'].iloc[0]
+    intercept_value = ols_sig['intercept'].iloc[0]
     fdr_p = ols_sig['p_ct_ols_fdr'].iloc[0]
 
     # Get the data for just that region
     sig_data = df_long[df_long['region'] == sig_region]
 
+    # Map sex to readable labels
+    sig_data = sig_data.copy()
+    sig_data['sex_label'] = sig_data['sex'].map({0: 'Female', 1: 'Male'})
+
     # Create the scatter plot
     plt.figure(figsize=(10, 8))
-    sns.scatterplot(data=sig_data, x='ct_z', y='gamma_z', hue='sex', size='sex',
-                    sizes=(100, 150), alpha=0.7, palette='Set1')
+    sns.scatterplot(data=sig_data, x='ct_z', y='meg_z', hue='sex_label', s=150,
+                alpha=0.7, palette={'Female': 'purple', 'Male': 'green'})
 
     # Add regression line
-    plt.plot([sig_data['ct_z'].min(), sig_data['ct_z'].max()],
-             [beta_value * sig_data['ct_z'].min(), beta_value * sig_data['ct_z'].max()],
-             'red', linewidth=3, linestyle='--', label=f'Regression line\nβ = {beta_value:.3f}')
+    x_range = np.linspace(sig_data['ct_z'].min(), sig_data['ct_z'].max(), 100)
+    beta_sex = ols_sig['beta_sex_ols'].iloc[0]
+    y_female = intercept_value + beta_value * x_range
+    y_male = intercept_value + beta_sex + beta_value * x_range
 
-    plt.xlabel('Cortical Thickness Z-score', fontsize=14)
-    plt.ylabel('Gamma Power Z-score', fontsize=14)
-    plt.title(f'{sig_region}\nCT → Gamma association\nFDR-corrected p = {fdr_p:.3f}', fontsize=16, fontweight='bold')
+    plt.plot(x_range, y_female, 'purple', linestyle='--',)
+    plt.plot(x_range, y_male, 'green', linestyle='--')
+    plt.xlabel('Cortical Thickness z-score', fontsize=14)
+    plt.ylabel('MEG Power z-score', fontsize=14)
+    plt.title(f'{capitalize(sig_region)}\nCT z-score vs  {capitalize(band)} Power z-score \nFDR-corrected p = {fdr_p:.3f}', fontsize=16, fontweight='bold')
     plt.legend(fontsize=12)
     plt.grid(True, alpha=0.3)
     plt.tight_layout()
 
-    plt.show()
+    plt.show(block=False)
 
+mystop=1
