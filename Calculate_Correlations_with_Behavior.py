@@ -23,6 +23,11 @@ with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_male_100
 with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_female_100_splits.pkl'), 'rb') as f:
     Z2_MEG_female = pickle.load(f)
 
+# Load cortical thickness z scores
+ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGenderCortthick'
+Z_time2_CT = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
+                         .format(ct_data_dir, 'cortthick'))
+
 # Get brain regions for MEG
 reg_cols = [col for col in Z2_MEG_male[bands[0]].columns if col != 'subject_id_test']
 region_list = sorted(set(col.split('-')[0] for col in reg_cols))
@@ -34,7 +39,7 @@ for band in bands:
     Z2_MEG_female[band].rename(columns={'subject_id_test': 'participant_id'}, inplace=True)
     Z2_MEG=pd.concat([Z2_MEG_male[band], Z2_MEG_female[band]], ignore_index=True)
 
-    # Merge CT and MEG data
+    # Merge behavior and MEG data
     Z2_Beh_MEG = pd.merge(behav_zs, Z2_MEG, on='participant_id', how='inner')
 
     Z2_Beh_MEG.columns = Z2_Beh_MEG.columns.str.replace('-', '')
@@ -173,5 +178,10 @@ for band in bands:
 
         print("Significant behaviors in females:")
         print(sig_female)
+
+        ct_right_posterior_cing = Z_time2_CT[['participant_id', 'cortthick-rh-posteriorcingulate']].copy()
+        rsq_anxiety = Z2_Beh_MEG[['participant_id', 'RSQanxiety']].copy()
+
+        ct_anxiety=ct_right_posterior_cing.merge(rsq_anxiety, on='participant_id', how='inner')
 
         mystop=1
