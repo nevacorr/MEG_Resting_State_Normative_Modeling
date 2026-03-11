@@ -6,24 +6,9 @@ import pickle
 import statsmodels.formula.api as smf
 import seaborn as sns
 
-interaction=True
-level = "region" #options: "lobe", "region"
+interaction=True#options: "lobe", "region"
 bands = ['beta', 'gamma']
 save_path = os.getcwd()
-
-lobes_map = {
-    'frontal': ['superiorfrontal', 'rostralmiddlefrontal', 'caudalmiddlefrontal', 'parsopercularis', 'parstriangularis',
-               'parsorbitalis', 'lateralorbitofrontal', 'medialorbitofrontal', 'precentral', 'paracentral','frontalpole'],
-
-    'parietal': ['superiorparietal', 'inferiorparietal', 'supramarginal', 'postcentral', 'precuneus',],
-
-    'temporal': ['superiortemporal', 'middletemporal', 'inferiortemporal', 'bankssts', 'fusiform', 'transversetemporal',
-                'entorhinal', 'temporalpole', 'parahippocampal'],
-
-    'occipital': ['lateraloccipital', 'lingual', 'cuneus', 'pericalcarine'],
-
-    'cingulate': ['rostralanteriorcingulate', 'caudalanteriorcingulate','posteriorcingulate','isthmuscingulate']
-}
 
 # Get working directory
 working_dir = os.getcwd()
@@ -52,28 +37,10 @@ for band in bands:
     # Merge CT and MEG data
     Z2_Beh_MEG = pd.merge(behav_zs, Z2_MEG, on='participant_id', how='inner')
 
-    # If lobe level, average data across regions in lobe
-    if level == "lobe":
-        for idx, row in Z2_Beh_MEG.iterrows():
-            subject = row['participant_id']
-            sex = row['gender']
-            for lobe, regions in lobes_map.items():
-                for hemi in ['lh', 'rh']:
-                    lobe_cols = [f'{r}-{hemi}' for r in regions if f'{r}-{hemi}' in row]
-                    if lobe_cols:
-                        meg_avg = row[lobe_cols].mean()
-                        # lobe + hemi combined label
-                        lobe_hemi = f"{lobe}-{hemi}"
-                        Z2_Beh_MEG.loc[idx, lobe_hemi] = meg_avg
-        # Keep lobe columns and remove individual regions columns
-        cols_to_drop = [col for col in Z2_Beh_MEG.columns if any(region in col for region in region_list)]
-        Z2_Beh_MEG.drop(columns=cols_to_drop, inplace=True)
-
     Z2_Beh_MEG.columns = Z2_Beh_MEG.columns.str.replace('-', '')
     behav_cols = [col for col in Z2_Beh_MEG if col not in ['participant_id', 'gender'] and not any(suffix in col for suffix in ['rh', 'lh'])]
     # meg_cols = [col for col in Z2_Beh_MEG if any(suffix in col for suffix in  ['rh', 'lh'])]
     meg_cols = [col for col in Z2_Beh_MEG if any(name in col for name in ['posteriorcingulaterh'])]
-
     results = []
 
     print("\nRunning per-region OLS GLMs...")
@@ -122,16 +89,6 @@ for band in bands:
         else:
             print("No significant interactions in any regions")
 
-        # Female-only model
-        model_f = smf.ols(formula=f'{meg} ~ RSQanxiety', data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]).fit()
-        print("Female-only model")
-        print(model_f.summary())
-
-        # Male-only model
-        model_m = smf.ols(formula=f'{meg} ~ RSQanxiety', data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1]).fit()
-        print("Male-only model")
-        print(model_m.summary())
-
         # Plot MEG vs RSQanxiety by sex
         plt.figure(figsize=(6, 5))
 
@@ -171,28 +128,30 @@ for band in bands:
         plt.show()
         results_sex = []
 
-        for behav in behav_cols:
-            # Female model
-            model_f = smf.ols(
-                formula=f'{meg} ~ {behav}',
-                data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]
-            ).fit()
+        for meg in meg_cols:
+            for behav in behav_cols:
+                # Female model
+                model_f = smf.ols(
+                    formula=f'{meg} ~ {behav}',
+                    data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]
+                ).fit()
 
-            # Male model
-            model_m = smf.ols(
-                formula=f'{meg} ~ {behav}',
-                data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1]
-            ).fit()
+                # Male model
+                model_m = smf.ols(
+                    formula=f'{meg} ~ {behav}',
+                    data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1]
+                ).fit()
 
-            results_sex.append({
-                'behavior': behav,
-                'beta_female': model_f.params[behav],
-                'pval_female': model_f.pvalues[behav],
-                'beta_male': model_m.params[behav],
-                'pval_male': model_m.pvalues[behav]
-            })
+                results_sex.append({
+                    'region': meg,
+                    'behavior': behav,
+                    'beta_female': model_f.params[behav],
+                    'pval_female': model_f.pvalues[behav],
+                    'beta_male': model_m.params[behav],
+                    'pval_male': model_m.pvalues[behav]
+                })
 
-            results_sex_df = pd.DataFrame(results_sex)
+                results_sex_df = pd.DataFrame(results_sex)
 
         # Female correction
         _, results_sex_df['pval_female_fdr'], _, _ = multipletests(
