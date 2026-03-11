@@ -1,14 +1,13 @@
 import os
 import pandas as pd
-from itertools import product
-from scipy.stats import pearsonr
 from statsmodels.stats.multitest import multipletests
 import matplotlib.pyplot as plt
-from sklearn.linear_model import LinearRegression
 import pickle
 import statsmodels.formula.api as smf
+import seaborn as sns
 
-level = "lobe" #options: "lobe", "region"
+interaction=True
+level = "region" #options: "lobe", "region"
 bands = ['beta', 'gamma']
 save_path = os.getcwd()
 
@@ -87,89 +86,157 @@ for band in bands:
 
     Z2_Beh_MEG.columns = Z2_Beh_MEG.columns.str.replace('-', '')
     behav_cols = [col for col in Z2_Beh_MEG if col not in ['participant_id', 'gender'] and not any(suffix in col for suffix in ['rh', 'lh'])]
-    meg_cols = [col for col in Z2_Beh_MEG if any(suffix in col for suffix in  ['rh', 'lh'])]
+    # meg_cols = [col for col in Z2_Beh_MEG if any(suffix in col for suffix in  ['rh', 'lh'])]
+    meg_cols = [col for col in Z2_Beh_MEG if any(name in col for name in ['posteriorcingulaterh'])]
 
     results = []
 
-    print("Running per-region OLS GLMs...")
+    print("\nRunning per-region OLS GLMs...")
     for behav in behav_cols:
         for meg in meg_cols:
 
-            formula = f'{meg} ~ {behav} + gender'
+            if not interaction:
 
-            model = smf.ols(formula=formula, data=Z2_Beh_MEG).fit()
+                formula = f'{meg} ~ {behav} + gender'
 
-            results.append({
-                'behavior': behav,
-                'region': meg,
-                'beta': model.params[behav],
-                'pval': model.pvalues[behav],
-                'r2': model.rsquared
-            })
+                model = smf.ols(formula=formula, data=Z2_Beh_MEG).fit()
+
+                results.append({
+                    'behavior': behav,
+                    'region': meg,
+                    'beta': model.params[behav],
+                    'pval': model.pvalues[behav],
+                    'r2': model.rsquared
+                })
+            else:
+
+                formula = f'{meg} ~ {behav} * gender'
+
+                model = smf.ols(formula=formula, data=Z2_Beh_MEG).fit()
+
+                results.append({
+                    'behavior': behav,
+                    'region': meg,
+                    'beta': model.params[behav],
+                    'pval': model.pvalues[behav],
+                    'pval_behavxsex': model.pvalues[f'{behav}:gender'],
+                    'r2': model.rsquared
+                })
 
     results_df = pd.DataFrame(results)
 
     # FDR correction for OLS p-values across regions
     _, results_df['pval_fdr'], _, _ = multipletests(results_df['pval'], method='fdr_bh')
-
-    # Combine results
-    results_df
-
-    # Quick interaction test for significant regions only
-    print("Testing sex × behavior interaction in significant regions...")
-    sig_region = results_df[results_df['pval_fdr'] < 0.05]['region'].iloc[0]
-    if len(sig_region) == 0:
-        print("No regions survive FDR.")
-        continue
-    sig_subdf = Z2_Beh_MEG[df_long['region'] == sig_region].copy()
-
-    model_int_formula = 'meg_z ~ ct_z * sex'
-    model_int = smf.ols(formula=model_int_formula, data=sig_subdf).fit()
-    p_interaction = model_int.pvalues['ct_z:sex']
-
-    print(f"{sig_region}: Interaction p = {p_interaction:.3f} (not significant, p > 0.05)")
-    print("→ Using common slope across sexes ✓")
-
     #  Find significant regions
-    ols_sig = final_results[final_results['p_ct_ols_fdr'] < 0.05]
-
-    print(f"\n=== {band} OLS Significant Regions (FDR < 0.05) ===")
+    ols_sig = results_df[results_df['pval'] < 0.05]
+    print(f"\n=== {band} OLS Significant Regions (p < 0.05) ===")
     if len(ols_sig) > 0:
-        print(ols_sig[['region', 'beta_ct_ols', 'p_ct_ols_fdr']].round(4))
+        print(ols_sig[['behavior', 'region', 'beta', 'pval', 'pval_fdr']].round(4))
     else:
         print("No significant regions")
 
-    # Get significant region
-    sig_region = ols_sig['region'].iloc[0]
-    beta_value = ols_sig['beta_ct_ols'].iloc[0]
-    intercept_value = ols_sig['intercept'].iloc[0]
-    fdr_p = ols_sig['p_ct_ols_fdr'].iloc[0]
+    if interaction:
+        _, results_df['pval_int_fdr'], _, _ = multipletests(results_df['pval_behavxsex'], method='fdr_bh')
+        #  Find significant interactions
+        ols_sig_int = results_df[results_df['pval_behavxsex'] < 0.05]
+        print(f"\n=== {band} OLS Significant Interaction Regions (p < 0.05) ===")
+        if len(ols_sig_int) > 0:
+            print(ols_sig_int[['behavior', 'region', 'pval', 'pval_behavxsex', 'pval_int_fdr']].round(4))
+        else:
+            print("No significant interactions in any regions")
 
-    # Get the data for just that region
-    sig_data = df_long[df_long['region'] == sig_region]
 
-    # Map sex to readable labels
-    sig_data = sig_data.copy()
-    sig_data['sex_label'] = sig_data['sex'].map({0: 'Female', 1: 'Male'})
+        # Female-only model
+        model_f = smf.ols(formula=f'{meg} ~ RSQanxiety', data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]).fit()
+        print("Female-only model")
+        print(model_f.summary())
 
-    # Create the scatter plot
-    plt.figure(figsize=(10, 8))
-    sns.scatterplot(data=sig_data, x='ct_z', y='meg_z', hue='sex_label', s=150,
-                alpha=0.7, palette={'Female': 'purple', 'Male': 'green'})
+        # Male-only model
+        model_m = smf.ols(formula=f'{meg} ~ RSQanxiety', data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1]).fit()
+        print("Male-only model")
+        print(model_m.summary())
 
-    # Add regression line
-    x_range = np.linspace(sig_data['ct_z'].min(), sig_data['ct_z'].max(), 100)
-    beta_sex = ols_sig['beta_sex_ols'].iloc[0]
-    y_female = intercept_value + beta_value * x_range
-    y_male = intercept_value + beta_sex + beta_value * x_range
+        # Plot MEG vs RSQanxiety by sex
+        plt.figure(figsize=(6, 5))
 
-    plt.plot(x_range, y_female, 'purple', linestyle='--',)
-    plt.plot(x_range, y_male, 'green', linestyle='--')
-    plt.xlabel('Cortical Thickness z-score', fontsize=14)
-    plt.ylabel('MEG Power z-score', fontsize=14)
-    plt.title(f'{capitalize(sig_region)}\nCT z-score vs  {capitalize(band)} Power z-score \nFDR-corrected p = {fdr_p:.3f}', fontsize=16, fontweight='bold')
-    plt.legend(fontsize=12)
-    plt.grid(True, alpha=0.3)
-    plt.tight_layout()
+        sns.scatterplot(
+            x='RSQanxiety',
+            y=meg,
+            hue='gender',
+            style='gender',
+            data=Z2_Beh_MEG,
+            palette={0: 'purple', 1: 'green'},
+            s=60
+        )
 
-    plt.show(block=False)
+        # Add regression lines for each sex
+        sns.regplot(
+            x='RSQanxiety',
+            y=meg,
+            data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0],
+            scatter=False,
+            color='purple',
+            label='Female slope'
+        )
+        sns.regplot(
+            x='RSQanxiety',
+            y=meg,
+            data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1],
+            scatter=False,
+            color='green',
+            label='Male slope'
+        )
+
+        plt.xlabel('RSQ Anxiety')
+        plt.ylabel(meg)
+        plt.title(f'{meg} vs RSQ Anxiety by Sex')
+        plt.legend(title='Gender', labels=['Female', 'Male', 'Female slope', 'Male slope'])
+        plt.tight_layout()
+        plt.show()
+        results_sex = []
+
+        for behav in behav_cols:
+            # Female model
+            model_f = smf.ols(
+                formula=f'{meg} ~ {behav}',
+                data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]
+            ).fit()
+
+            # Male model
+            model_m = smf.ols(
+                formula=f'{meg} ~ {behav}',
+                data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1]
+            ).fit()
+
+            results_sex.append({
+                'behavior': behav,
+                'beta_female': model_f.params[behav],
+                'pval_female': model_f.pvalues[behav],
+                'beta_male': model_m.params[behav],
+                'pval_male': model_m.pvalues[behav]
+            })
+
+            results_sex_df = pd.DataFrame(results_sex)
+
+        # Female correction
+        _, results_sex_df['pval_female_fdr'], _, _ = multipletests(
+            results_sex_df['pval_female'],
+            method='fdr_bh'
+        )
+
+        # Male correction
+        _, results_sex_df['pval_male_fdr'], _, _ = multipletests(
+            results_sex_df['pval_male'],
+            method='fdr_bh'
+        )
+
+        sig_male = results_sex_df[results_sex_df['pval_male'] < 0.05]
+        sig_female = results_sex_df[results_sex_df['pval_female'] < 0.05]
+
+        print("Significant behaviors in males:")
+        print(sig_male)
+
+        print("Significant behaviors in females:")
+        print(sig_female)
+
+        mystop=1
