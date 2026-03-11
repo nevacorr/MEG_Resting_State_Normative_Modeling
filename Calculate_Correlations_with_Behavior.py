@@ -25,12 +25,6 @@ lobes_map = {
     'cingulate': ['rostralanteriorcingulate', 'caudalanteriorcingulate','posteriorcingulate','isthmuscingulate']
 }
 
-# Add remove outliers flag
-# remove_outliers = 0
-
-# brain_regions_of_interest = ['Minor']
-behaviors_of_interest = ['FlankerSU', 'DCSU']
-
 # Get working directory
 working_dir = os.getcwd()
 
@@ -44,12 +38,7 @@ with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_male_100
 with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_female_100_splits.pkl'), 'rb') as f:
     Z2_MEG_female = pickle.load(f)
 
-# Keep only behavior columns that contain substrings from behaviors_of_interest, plus 'participant_id'
-# behav_zs = behav_zs[[col for col in behav_zs.columns if any(sub in col for sub in behaviors_of_interest) or col == 'participant_id']]
-
-# Keep only DWI columns that contain substrings from brain_regions_of_interest, plus 'participant_id'
-# dwi_zs = dwi_zs[[col for col in dwi_zs.columns if any(sub in col for sub in brain_regions_of_interest) or col == 'participant_id']]
-
+# Get brain regions for MEG
 reg_cols = [col for col in Z2_MEG_male[bands[0]].columns if col != 'subject_id_test']
 region_list = sorted(set(col.split('-')[0] for col in reg_cols))
 
@@ -63,14 +52,11 @@ for band in bands:
     # Merge CT and MEG data
     Z2_Beh_MEG = pd.merge(behav_zs, Z2_MEG, on='participant_id', how='inner')
 
-    # ---------------------------
-    # Reshape/Aggregate
-    # ---------------------------
-    for idx, row in Z2_Beh_MEG.iterrows():
-        subject = row['participant_id']
-        sex = row['gender']
-        if level == "lobe":
-            # Aggregate by lobe + hemisphere
+    # If lobe level, average data across regions in lobe
+    if level == "lobe":
+        for idx, row in Z2_Beh_MEG.iterrows():
+            subject = row['participant_id']
+            sex = row['gender']
             for lobe, regions in lobes_map.items():
                 for hemi in ['lh', 'rh']:
                     lobe_cols = [f'{r}-{hemi}' for r in regions if f'{r}-{hemi}' in row]
@@ -79,8 +65,7 @@ for band in bands:
                         # lobe + hemi combined label
                         lobe_hemi = f"{lobe}-{hemi}"
                         Z2_Beh_MEG.loc[idx, lobe_hemi] = meg_avg
-
-    if level == "lobe":
+        # Keep lobe columns and remove individual regions columns
         cols_to_drop = [col for col in Z2_Beh_MEG.columns if any(region in col for region in region_list)]
         Z2_Beh_MEG.drop(columns=cols_to_drop, inplace=True)
 
@@ -94,33 +79,24 @@ for band in bands:
     print("\nRunning per-region OLS GLMs...")
     for behav in behav_cols:
         for meg in meg_cols:
-
             if not interaction:
-
                 formula = f'{meg} ~ {behav} + gender'
-
                 model = smf.ols(formula=formula, data=Z2_Beh_MEG).fit()
-
                 results.append({
                     'behavior': behav,
                     'region': meg,
                     'beta': model.params[behav],
                     'pval': model.pvalues[behav],
-                    'r2': model.rsquared
                 })
             else:
-
                 formula = f'{meg} ~ {behav} * gender'
-
                 model = smf.ols(formula=formula, data=Z2_Beh_MEG).fit()
-
                 results.append({
                     'behavior': behav,
                     'region': meg,
                     'beta': model.params[behav],
                     'pval': model.pvalues[behav],
                     'pval_behavxsex': model.pvalues[f'{behav}:gender'],
-                    'r2': model.rsquared
                 })
 
     results_df = pd.DataFrame(results)
@@ -129,13 +105,14 @@ for band in bands:
     _, results_df['pval_fdr'], _, _ = multipletests(results_df['pval'], method='fdr_bh')
     #  Find significant regions
     ols_sig = results_df[results_df['pval'] < 0.05]
-    print(f"\n=== {band} OLS Significant Regions (p < 0.05) ===")
+    print(f"\n=== {band} OLS Significant Slope Regions (p < 0.05) ===")
     if len(ols_sig) > 0:
         print(ols_sig[['behavior', 'region', 'beta', 'pval', 'pval_fdr']].round(4))
     else:
-        print("No significant regions")
+        print("No significant slope in any regions")
 
     if interaction:
+        # FDR Correction for pvalue for interaction
         _, results_df['pval_int_fdr'], _, _ = multipletests(results_df['pval_behavxsex'], method='fdr_bh')
         #  Find significant interactions
         ols_sig_int = results_df[results_df['pval_behavxsex'] < 0.05]
@@ -144,7 +121,6 @@ for band in bands:
             print(ols_sig_int[['behavior', 'region', 'pval', 'pval_behavxsex', 'pval_int_fdr']].round(4))
         else:
             print("No significant interactions in any regions")
-
 
         # Female-only model
         model_f = smf.ols(formula=f'{meg} ~ RSQanxiety', data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0]).fit()
@@ -175,22 +151,22 @@ for band in bands:
             y=meg,
             data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 0],
             scatter=False,
-            color='purple',
-            label='Female slope'
+            ci=False,
+            color='purple'
         )
         sns.regplot(
             x='RSQanxiety',
             y=meg,
             data=Z2_Beh_MEG[Z2_Beh_MEG['gender'] == 1],
             scatter=False,
-            color='green',
-            label='Male slope'
+            ci=False,
+            color='green'
         )
 
         plt.xlabel('RSQ Anxiety')
         plt.ylabel(meg)
-        plt.title(f'{meg} vs RSQ Anxiety by Sex')
-        plt.legend(title='Gender', labels=['Female', 'Male', 'Female slope', 'Male slope'])
+        plt.title(f'{band} {meg} vs RSQ Anxiety by Sex')
+        plt.legend(title='Gender', labels=['Male', 'Female'])
         plt.tight_layout()
         plt.show()
         results_sex = []
