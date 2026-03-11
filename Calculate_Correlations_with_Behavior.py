@@ -131,6 +131,7 @@ for band in bands:
         plt.legend(title='Gender', labels=['Male', 'Female'])
         plt.tight_layout()
         plt.show()
+
         results_sex = []
 
         for meg in meg_cols:
@@ -179,9 +180,42 @@ for band in bands:
         print("Significant behaviors in females:")
         print(sig_female)
 
-        ct_right_posterior_cing = Z_time2_CT[['participant_id', 'cortthick-rh-posteriorcingulate']].copy()
-        rsq_anxiety = Z2_Beh_MEG[['participant_id', 'RSQanxiety']].copy()
+    ct_right_posterior_cing = Z_time2_CT[['participant_id', 'cortthick-rh-posteriorcingulate']].copy()
+    rsq_anxiety = Z2_Beh_MEG[['participant_id', 'gender', 'RSQanxiety']].copy()
 
-        ct_anxiety=ct_right_posterior_cing.merge(rsq_anxiety, on='participant_id', how='inner')
+    Z2_ct_anxiety=ct_right_posterior_cing.merge(rsq_anxiety, on='participant_id', how='inner')
 
-        mystop=1
+    reg='ctrhposteriorcingulate'
+    Z2_ct_anxiety.rename(columns={'cortthick-rh-posteriorcingulate':f'{reg}'}, inplace=True)
+    behav='RSQanxiety'
+
+    # Female model
+    model_ct_anx = smf.ols(
+        formula=f'{reg} ~ {behav} * gender',
+        data=Z2_ct_anxiety
+    ).fit()
+
+
+    results_ct = []
+
+    results_ct.append({
+        'region': 'posteriorcingulaterh',
+        'behavior': behav,
+        'beta': model_ct_anx.params[behav],
+        'pval': model_ct_anx.pvalues[behav],
+        'pval_behavxsex': model_ct_anx.pvalues[f'{behav}:gender'],
+    })
+
+    results_ct_df = pd.DataFrame(results_ct)
+
+    sig_ct = results_ct_df[results_ct_df['pval'] < 0.05]
+    sig_ct_int = results_ct_df[results_ct_df['pval_behavxsex'] < 0.05]
+
+    print(f"-----{band} Cortical thickness vs. RSQanxiety-------")
+    print("Significant behaviors:")
+    print(sig_ct)
+
+    print("Significant behaviors for interaction:")
+    print(sig_ct_int)
+
+    mystop=1
