@@ -55,10 +55,6 @@ ct_data_dir = '/home/toddr/neva/PycharmProjects/TestPCNNatureProtTutBinaryGender
 Z_time2_CT = pd.read_csv('{}/predict_files/{}/Z_scores_by_region_postcovid_testset_Final.txt'
                          .format(ct_data_dir, 'cortthick'))
 
-# Get brain regions for MEG
-reg_cols = [col for col in Z2_MEG_male[bands[0]].columns if col != 'subject_id_test']
-region_list = sorted(set(col.split('-')[0] for col in reg_cols))
-
 for band in bands:
 
     # Merge male and female MEG data
@@ -104,13 +100,13 @@ for band in bands:
 
     # Results
     print("\nTop regions (LV1 brain weights):")
-    brain_weights = np.abs(pls.x_loadings_[:, 0])
+    brain_weights = np.abs(pls.x_weights_[:, 0])
     top_regions = np.argsort(brain_weights)[-5:][::-1]
     for r in top_regions:
-        print(f"  Region {reg_cols[r]}: {brain_weights[r]:.3f}")
+        print(f"  Region {meg_cols[r]}: {brain_weights[r]:.3f}")
 
     print("\nBehavior weights (LV1):")
-    for b, w in enumerate(np.abs(pls.y_loadings_[:, 0])):
+    for b, w in enumerate(np.abs(pls.y_weights_[:, 0])):
         print(f"  {behavior_cols[b]}: {w:.3f}")
 
     if band == 'gamma':
@@ -124,26 +120,47 @@ for band in bands:
 
         slope, intercept = np.polyfit(brain_scores, behav_scores, 1)
         x_line = np.linspace(brain_scores.min(), brain_scores.max(), 100)
-        plt.plot(x_line, slope * x_line + intercept, 'gray-', lw=2.5)
+        plt.plot(x_line, slope * x_line + intercept, color='grey', lw=2.5)
 
         # Labels and title
-        plt.xlabel('Gamma Power LV1 Brain Scores)', fontsize=11)
-        plt.ylabel('LV1 Emotion Scores)', fontsize=11)
-        plt.title(f'Gamma PLS LV1: Brain-Behavior Relationship\n(p ={p_val})', fontsize=12, fontweight='bold', pad=20)
-
-        # Correlation text box
+        plt.xlabel('Gamma Power LV1 Brain Scores', fontsize=11)
+        plt.ylabel('LV1 Emotion Scores', fontsize=11)
         r = np.corrcoef(brain_scores, behav_scores)[0,1]
-        plt.text(0.05, 0.95, f'r = {r:.3f}\nn = {n}\np = {p_val}',
-                 transform=plt.gca().transAxes,
-                 bbox=dict(boxstyle='round', facecolor='wheat', alpha=0.8),
-                 fontsize=10, verticalalignment='top')
-
-        # Formatting
+        plt.title(f'Gamma PLS LV1: Brain-Behavior Relationship\n(r={r:.3f}, p ={p_val})', fontsize=12, fontweight='bold', pad=20)
         plt.grid(True, alpha=0.3)
         plt.legend(loc='lower right')
         plt.tight_layout()
         plt.show()
 
+        # Top 10 brain regions by absolute weight
+        top_regions = np.argsort(np.abs(pls.x_weights_[:, 0]))[-10:][::-1]
+        plt.figure(figsize=(8, 6))
+        plt.barh(range(10), np.abs(pls.x_weights_[top_regions, 0]))
+        plt.yticks(range(10), [meg_cols[i] for i in top_regions])
+        plt.xlabel('|Brain Weight| (LV1)')
+        plt.title('Top Gamma Brain Regions Driving LV1')
+        plt.tight_layout()
+        plt.show()
 
+        # Sort emotion behaviors by weight
+        plt.figure(figsize=(8, 6))
+        weights = np.abs(pls.y_weights_[:, 0])
+        top_behav = np.argsort(weights)[-8:][::-1]
+        plt.barh(range(8), weights[top_behav])
+        plt.yticks(range(8), [behavior_cols[i] for i in top_behav])
+        plt.xlabel('|Behavior Weight| (LV1)')
+        plt.title('Top Emotion Measures Driving LV1')
+        plt.tight_layout()
+        plt.show()
+
+        # Plot permutation histogram
+        plt.figure(figsize=(6, 4))
+        plt.hist(null_dist, bins=30, alpha=0.7, color='lightgray')  # null_dist = permuted scores
+        plt.axvline(score, color='black', lw=3, label='Observed LV1 = -2.232')  # score = observed
+        plt.xlabel('PLS LV1 Covariance Score')
+        plt.ylabel('Frequency')
+        plt.title('Permutation Test (p=0.069)')
+        plt.legend()
+        plt.show()
 
 
