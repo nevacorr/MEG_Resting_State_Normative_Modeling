@@ -1,7 +1,7 @@
 # uncompyle6 version 3.9.1
 # Python bytecode version base 3.8.0 (3413)
 # Decompiled from: Python 3.9.18 (main, Sep 11 2023, 13:41:44) 
-# [GCC 11.2.0]
+# [GCC 11.2.0]a
 # Embedded file name: /home/toddr/neva/PycharmProjects/MEG Resting State Normative Modeling/prepare_rsMEG_data.py
 # Compiled at: 2024-01-11 11:50:41
 # Size of source mod 2**32: 2198 bytes
@@ -32,14 +32,18 @@ def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
     rsd_v1 = resting_state_data.filter(regex="subject|t1_").copy()
     rsd_v2 = resting_state_data.filter(regex="subject|t2_").copy()
 
-    # Drop rows with more than 10 missing values
-    rsd_v1.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
-    rsd_v2.dropna(axis=0, thresh=10, inplace=True, ignore_index=True)
+    # get column names for resting state signal
+    cols_t1 = [c for c in rsd_v1.columns if c.startswith(('t1_theta', 't1_beta', 't1_alpha', 't1_gamma'))]
+    cols_t2 = [c for c in rsd_v2.columns if c.startswith(('t2_theta', 't2_beta', 't2_alpha', 't2_gamma'))]
+
+    # Drop rows with nan values for MEG data
+    rsd_v1.dropna(axis=0, subset=cols_t1, inplace=True, ignore_index=True)
+    rsd_v2.dropna(axis=0, subset=cols_t2, inplace=True, ignore_index=True)
 
     # Check for nan values in data
     nan_rows1 = rsd_v1.isna().sum().sum()
     nan_rows2 = rsd_v2.isna().sum().sum()
-    if (nan_rows1 != 0) and (nan_rows2 != 0):
+    if (nan_rows1 != 0) or (nan_rows2 != 0):
         sys.exit('Error: Input data has nan values. Stopping program execution.')
 
     # Rename column in MEG dataframe that has age group
@@ -104,20 +108,33 @@ def prepare_rsMEG_data(filename, subjects_to_exclude, ct_data_dir):
     # Make lists of subjects with data only at timepoint 1, subjects with data at only timepoint 2, and all subjects in dataset
     # Make a dataframe with visit and subject data from both visits
     # Add a 'visit' column to each DataFrame (without altering the original ones)
+    #Make dataframe with only subject column of subjects with data at visit 1
     rsd_v1_with_visit = rsd_v1[['subject']].copy()
+    # add visit number column
     rsd_v1_with_visit['visit'] = 1
+    # Make dataframe with only subject column of subjects with data at visit 2
     rsd_v2_with_visit = rsd_v2[['subject']].copy()
+    # add visit number column
     rsd_v2_with_visit['visit'] = 2
-    # Concatenate them
+    # make a dataframe that has subject numbers and visit numbers for all data
     rsd_allvisits = pd.concat([rsd_v1_with_visit, rsd_v2_with_visit], ignore_index=True)
+    # make list of unique subjects with data at any time point
     all_subjects =rsd_allvisits['subject'].unique().tolist()
 
+    # series of unique subjects and how many visits each has
     unique_subjects = rsd_allvisits['subject'].value_counts()
+    # get unique subjects with only 1 visit
     unique_subjects = unique_subjects[unique_subjects == 1].index
+    # make a dataframe of subjects with that have data for only one visit. This data frame only has subject number and visit number.
     subjects_with_one_dataset = rsd_allvisits[rsd_allvisits['subject'].isin(unique_subjects)]
+    # make a dataframe of subjects with data only for visit 1.  This data frame only has subject number and visit number.
     subjects_visit1_data_only = subjects_with_one_dataset[subjects_with_one_dataset['visit'] == 1]
+    # make a list of subjects with data for only visit 2. This data frame only has subject number and visit number.
     subjects_visit2_data_only = subjects_with_one_dataset[subjects_with_one_dataset['visit'] == 2]
+    # make a list of subjects with data for only visit 1
     subjects_v1_only = subjects_visit1_data_only['subject'].tolist()
+    # make a list of subjects with data for only visit 2
     subjects_v2_only = subjects_visit2_data_only['subject'].tolist()
 
+    # return all data for v1 and v2, list of unique subjects with MEG data at any time point, list of subjects with data from v1 only, list of subjects with data from v2 only
     return (rsd_v1, rsd_v2, all_subjects, subjects_v1_only, subjects_v2_only)
