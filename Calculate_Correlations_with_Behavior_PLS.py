@@ -28,7 +28,7 @@ def pls_permutation_test(X, Y, n_components=1, n_perm=1000, random_state=42):
         perm_scores[i] = pls_perm.score(X_perm, Y)
 
     # Two-tailed p-value
-    p_val = np.mean(np.abs(perm_scores) >= np.abs(orig_score))
+    p_val = np.sum(np.abs(perm_scores) >= np.abs(orig_score))/len(perm_scores)
     return orig_score, p_val, perm_scores
 
 
@@ -86,6 +86,11 @@ for band in bands:
     pls = PLSCanonical(n_components=3)
     pls.fit(X, Y)
 
+    T, U = pls.transform(X, Y)
+
+    cov = [np.cov(T[:, i], U[:, i])[0, 1] for i in range(3)]
+    print(cov)
+
     # Permutation test LV1
     score, p_val, null_dist = pls_permutation_test(X, Y, n_components=1, n_perm=1000)
     print(f'{band} Band')
@@ -126,7 +131,7 @@ for band in bands:
         plt.xlabel('Gamma Power LV1 Brain Scores', fontsize=11)
         plt.ylabel('LV1 Emotion Scores', fontsize=11)
         r = np.corrcoef(brain_scores, behav_scores)[0,1]
-        plt.title(f'Gamma PLS LV1: Brain-Behavior Relationship\n(r={r:.3f}, p ={p_val})', fontsize=12, fontweight='bold', pad=20)
+        plt.title(f'Gamma PLS LV1: Brain-Behavior Relationship\np ={p_val}', fontsize=12, fontweight='bold', pad=20)
         plt.grid(True, alpha=0.3)
         plt.legend(loc='lower right')
         plt.tight_layout()
@@ -163,4 +168,5 @@ for band in bands:
         plt.legend()
         plt.show()
 
+        mystop=1
 
