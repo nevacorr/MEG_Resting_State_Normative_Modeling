@@ -16,7 +16,7 @@ from normative_edited import predict
 from joblib import load
 
 def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir, rsd_v2, dirdata, dirpredict, sex, band):
+                                working_dir, rsd_v2, dirdata, dirpredict, sex, band, split):
 
     rsd_v2 =rsd_v2[rsd_v2['subject'] < 400]
 
@@ -96,7 +96,7 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
     ####Make Predictions of Brain Structural Measures Post-Covid based on Pre-Covid Normative Model
 
     for roi in roi_ids:
-        print(f'Running ROI:', roi, 'predict for Band {band}')
+        print(f'Running ROI: {roi} predict for Band {band} split {split+1}')
         roi_dir = os.path.join(predict_files_dir, roi)
         model_dir = os.path.join(training_dir, roi, 'Models')
         os.chdir(roi_dir)
@@ -114,8 +114,8 @@ def apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spl
         dummy_cov_file_path= create_dummy_design_matrix_one_gender(agemin, agemax,
                                                     spline_order, spline_knots, working_dir)
 
-        plot_data_with_spline_one_gender(sex, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
-                    dummy_cov_file_path, model_dir, roi, show_plots, working_dir, dirdata)
+        #plot_data_with_spline_one_gender(sex, 'Postcovid (Test) Data ', band, cov_file_te, resp_file_te,
+        #            dummy_cov_file_path, model_dir, roi, show_plots, working_dir, dirdata)
         #
         # plt.show()
 
