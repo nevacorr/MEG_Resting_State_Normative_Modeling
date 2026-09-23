@@ -13,10 +13,11 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
                                subjects_to_exclude, bands, n_splits, lobes_only, data_type):
 
     # load all rs MEG data
+    # returns all data for v1 and v2, list of unique subjects with MEG data at any time point, list of subjects with data from v1 only, list of subjects with data from v2 only
     rsd_v1, rsd_v2, all_subjects_orig, sub_v1_only_orig, sub_v2_only_orig \
                                  = prepare_rsMEG_data(MEG_filename, subjects_to_exclude, ct_data_dir)
 
-    # Keep and process only the data for the sexes of interest
+    # Keep only the data for the sex of interest
     if gender == 'male':
         rsd_v1 = rsd_v1.loc[rsd_v1['gender'] == 1]
         rsd_v2 = rsd_v2.loc[rsd_v2['gender'] == 1]
@@ -30,7 +31,7 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
 
     # Remove the prefix 't1_' or 't2_' from column names
     rsd_v1.columns = rsd_v1.columns.str.replace(r'^t1_', '', regex=True)
-    rsd_v2.columns = rsd_v1.columns.str.replace(r'^t2_', '', regex=True)
+    rsd_v2.columns = rsd_v2.columns.str.replace(r'^t2_', '', regex=True)
 
     ### FOR DEBUGGING ONLY
     # columns_to_keep = ['subject', 'agegrp', 'agedays', 'theta-bankssts-lh','alpha-bankssts-lh',
@@ -43,11 +44,11 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     cols_to_eval = [col for col in rsd_v1.columns if '-lh' in col or '-rh' in col]
 
     if data_type == 'relative':
-        # # Multiply valuesin the specified columns by 100 (relative data)
+        # # Multiply values in the specified columns by 100 (relative data)
         rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] * 100.000
         rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] * 100.000
     elif data_type == 'absolute':
-        # Divide value sin the specified columns by 100 (absolute data)
+        # Divide values in the specified columns by 100 (absolute data)
         rsd_v1[cols_to_eval] = rsd_v1[cols_to_eval] / 100.000
         rsd_v2[cols_to_eval] = rsd_v2[cols_to_eval] / 100.000
 
@@ -58,24 +59,25 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
                                  '(Total N=' + str(rsd_v1.shape[0]) + ')', struct_var, 'pre-covid_allsubj',
                                   os.path.join(working_dir, 'data'))
 
+    # From lists of subjects with just visit 1 or 2, select only male or female subjects
     if gender == 'female':
+        # lists of female subjets with v1 or v2 data only
         sub_v1_only = [sub for sub in sub_v1_only_orig if sub % 2 == 0]
         sub_v2_only = [sub for sub in sub_v2_only_orig if sub % 2 == 0]
-
     elif gender == 'male':
+        # lists of male subjects with v2 or v2 data only
         sub_v1_only = [sub for sub in sub_v1_only_orig if sub % 2 != 0]
         sub_v2_only = [sub for sub in sub_v2_only_orig if sub % 2 != 0]
 
-    # remove subjects to exclude from list of all subjects
     all_subjects = rsd_v1['subject'].tolist()
     all_subjects.extend(rsd_v2['subject'].tolist())
     all_subjects = pd.unique(all_subjects).tolist()
+    # all subjects of this gender with data at any timepoint
     all_subjects.sort()
+    # all subjects of this gender with data only at both timepoints
     all_subjects_2ts = [sub for sub in all_subjects if (sub not in sub_v1_only and sub not in sub_v2_only)]
 
-    num_subjs_random_add_train = (len(all_subjects) / 2) - len(sub_v1_only)
-    num_subjs_random_add_test = (len(all_subjects) / 2) - len(sub_v2_only)
-
+    # all time 1 data for this gender
     v1_df_for_train_test_split = rsd_v1.copy()
 
     # Create a dataframe that has only visit 1 data and only subject number, visit, age and sex as columns
@@ -86,8 +88,17 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     v1_df_for_train_test_split = v1_df_for_train_test_split[
         v1_df_for_train_test_split['subject'].isin(all_subjects_2ts)]
 
-    # Initialize StratifiedShuffleSplit for equal train/test sizes
-    splitter = StratifiedShuffleSplit(n_splits=n_splits, test_size=0.70, random_state=42)
+    # Initialize StratifiedShuffleSplit for equal train/test sizes. Use split percent that gives equal train and
+    # test sizes for M and F after taking into account number of subjects with data only at one timepoint.
+    # For males there are 47 subj. with data at both tp, 25 with data at tp 1 and 6 with data at tp 2 (from split add 14 at tp1 and 33 at tp2)
+    # For females there are 53 subj. with data at both tp, 21 with data at tp 1 and 5 with data at tp 2 (from split add 18 at tp1 and 35 at tp2)
+    # For males solve 25+x = 6+y and x+y= 47. get x=14, y=33 and test_size=33/47=0.7. This give 39 in train set and 39 in test set.
+    # For females Solve 21+x = 5+y  and x+y = 53. get x=18, y=35 and test_size=35/53=0.66. This gives 39 in train set and 40 in test set
+
+    if gender == "male":
+        splitter = StratifiedShuffleSplit(n_splits=n_splits, test_size=0.70, random_state=42)
+    elif gender == "female":
+        splitter = StratifiedShuffleSplit(n_splits=n_splits, test_size=0.66, random_state=42)
 
     train_set_list = []
     test_set_list = []
@@ -95,8 +106,10 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     for i, (train_index, test_index) in enumerate(
             splitter.split(v1_df_for_train_test_split, v1_df_for_train_test_split['agegrp'])):
         train_set_list_tmp = v1_df_for_train_test_split.iloc[train_index, 0].values.tolist()
+        # add subjects with time 1 data only
         train_set_list_tmp.extend(sub_v1_only)
         test_set_list_tmp = v1_df_for_train_test_split.iloc[test_index, 0].values.tolist()
+        # add subjects with time 2 data only
         test_set_list_tmp.extend(sub_v2_only)
         train_set_list.append(train_set_list_tmp)
         test_set_list.append(test_set_list_tmp)
