@@ -11,7 +11,7 @@ from helper_functions_MEG import recreate_folder, copy_old_files_to_backup_folde
 
 struct_var = 'meg'
 n_splits = 100         # number of train/test splits
-show_plots = 0        #set to 1 to show training and test data spline fit plots.
+show_plots = 1        #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 1 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for models
 spline_knots = 2        # number of knots in spline to use in models
@@ -22,7 +22,7 @@ working_dir = os.getcwd()
 run_make_norm_model = 1
 plot_z_distributions = 1
 lobes_only = 0
-subjects_to_exclude = [525] #532 was an outlier on original MEG data set but is no longer with updated
+subjects_to_exclude = [] #525 and 532 were outliers on im previous processing but are no longer with updated processing
 bands = ['theta', 'alpha', 'beta', 'gamma']
 
 Z2_all_splits = {}    # Create directory for storing subject number bar plots
