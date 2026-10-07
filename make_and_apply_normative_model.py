@@ -10,7 +10,7 @@ import pickle
 
 def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
                                spline_knots, working_dir, ct_data_dir, MEG_filename,
-                               subjects_to_exclude, bands, n_splits, lobes_only, data_type):
+                               subjects_to_exclude, bands, n_splits, data_type, evaluate_model_fit):
 
     # load all rs MEG data
     # returns all data for v1 and v2, list of unique subjects with MEG data at any time point, list of subjects with data from v1 only, list of subjects with data from v2 only
@@ -117,14 +117,17 @@ def make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject
     train_set_array = np.array(list(train_set_list))
     test_set_array = np.array(list(test_set_list))
 
-    fname_train = '{}/visit1_subjects_train_sets_{}_splits_{}.txt'.format(working_dir, n_splits, struct_var)
+    fname_train = '{}/visit1_subjects_train_sets_{}_{}_splits_{}.npy'.format(working_dir, gender, n_splits, struct_var)
     np.save(fname_train, train_set_array)
 
-    fname_test = '{}/visit1_subjects_test_sets_{}_splits_{}.txt'.format(working_dir, n_splits, struct_var)
+    fname_test = '{}/visit1_subjects_test_sets_{}_{}_splits_{}.npy'.format(working_dir, gender, n_splits, struct_var)
     np.save(fname_test, test_set_array)
 
     Z2_all_splits_dict = make_model(rsd_v1, rsd_v2, struct_var, n_splits, train_set_array, test_set_array,
-               show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, gender, bands, lobes_only)
+               show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, gender, bands, evaluate_model_fit)
+
+    if evaluate_model_fit:
+        return None
 
     # For each band, average Z scores for the same subject across splits
     for band, df in Z2_all_splits_dict.items():
