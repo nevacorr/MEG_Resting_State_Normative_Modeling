@@ -23,8 +23,8 @@ working_dir = os.getcwd()
 run_make_norm_model = 1
 plot_z_distributions = 0
 lobes_only = 0
-subjects_to_exclude = [] #525 and 532 were outliers on im previous processing but are no longer with updated processing
-bands = ['theta', 'alpha', 'beta', 'gamma']
+subjects_to_exclude = [] #525 and 532 were outliers on in previous processing but are no longer with updated processing
+bands = ['beta', 'gamma']
 
 Z2_all_splits = {}    # Create directory for storing subject number bar plots
 
