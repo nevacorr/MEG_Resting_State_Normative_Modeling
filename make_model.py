@@ -104,7 +104,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             data_dir = '{}/{}/{}_{}/ROI_models/'.format(working_dir, dirdata, sex, band)
 
             if evaluate_model_fit:
-                loo_metrics = evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, working_dir, data_dir,
+                loo_metrics = evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, data_dir,
                                                            spline_order, spline_knots)
                 loo_metrics['split'] = split
                 loo_metrics['band'] = band

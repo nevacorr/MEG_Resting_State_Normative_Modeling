@@ -2,8 +2,8 @@ import os
 import pickle
 
 working_dir = os.getcwd()
-n_splits = 1
-bands = ['theta', 'alpha', 'beta', 'gamma']
+n_splits = 100
+bands = ['beta', 'gamma']
 metric_cols = ['MSLL', 'EV', 'SMSE', 'RMSE', 'Rho', 'z_mean', 'z_std']
 
 blr_metrics = {}

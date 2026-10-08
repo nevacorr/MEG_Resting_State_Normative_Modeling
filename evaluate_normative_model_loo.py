@@ -5,14 +5,14 @@ import pandas as pd
 import os
 import shutil
 from helper_functions_MEG import recreate_folder, create_dummy_design_matrix_one_gender, create_design_matrix_one_gender
-from pcntoolkit.normative import estimate
+from pcn_estimate_myedit_loo import estimate
+# from pcntoolkit.normative import estimate
 
 """
 Perform leave-one-out cross validation on the normative training set
 """
 
-def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, working_dir, data_dir, spline_order,
-        spline_knots):
+def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, data_dir, spline_order, spline_knots):
 
     loo = LeaveOneOut()
 
@@ -59,11 +59,11 @@ def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, work
             cov_tr_filepath = os.path.join(roi_data_dir, 'cov_tr.txt')
             cov_te_filepath = os.path.join(roi_data_dir, 'cov_te.txt')
 
-            y_train.to_csv(resp_tr_filepath,sep='\t',header=False,index=False)
-            y_val.to_csv(resp_te_filepath,sep='\t',header=False, index=False)
+            y_train.to_csv(resp_tr_filepath, sep='\t', header=False, index=False)
+            np.savetxt(resp_te_filepath, y_val.values.reshape(1, -1), delimiter='\t')
 
-            X_train.to_csv(cov_tr_filepath,sep='\t',header=False,index=False)
-            X_val.to_csv(cov_te_filepath,sep='\t',header=False,index=False)
+            X_train.to_csv(cov_tr_filepath, sep='\t', header=False, index=False)
+            np.savetxt(cov_te_filepath, X_val.values.reshape(1, -1), delimiter='\t')
 
             # Create spline design matrices
             create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, [roi], roidirname)

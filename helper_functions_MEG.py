@@ -61,7 +61,7 @@ def create_design_matrix_one_gender(datatype, agemin, agemax, spline_order, spli
         if datatype == 'train':
             X = np.loadtxt(os.path.join(roi_dir, 'cov_tr.txt'))
         elif datatype == 'test':
-            X = np.loadtxt(os.path.join(roi_dir, 'cov_te.txt'))
+            X = np.atleast_1d(np.loadtxt(os.path.join(roi_dir, 'cov_te.txt')))
 
         # Add intercept column
         X = np.vstack((X, np.ones(len(X)))).T
