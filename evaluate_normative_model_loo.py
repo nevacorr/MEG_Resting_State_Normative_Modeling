@@ -6,12 +6,13 @@ import os
 import shutil
 from helper_functions_MEG import recreate_folder, create_dummy_design_matrix_one_gender, create_design_matrix_one_gender
 from pcntoolkit.normative import estimate
+
 """
 Perform leave-one-out cross validation on the normative training set
 """
 
-def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, working_dir, data_dir, sex, spline_order,
-        spline_knots, agemin, agemax):
+def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, working_dir, data_dir, spline_order,
+        spline_knots):
 
     loo = LeaveOneOut()
 
@@ -29,31 +30,34 @@ def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, work
 
         # Leave-one-out loop
         for fold, (train_idx, val_idx) in enumerate(loo.split(rs_covariates), start=1):
-            print(f'    LOO {fold}/39')
+            print(f'    LOO {fold}/{len(rs_covariates)}')
 
-            # Split covariates
+            # Split covariates and response
             X_train = rs_covariates.iloc[train_idx].copy()
             X_val = rs_covariates.iloc[val_idx].copy()
 
-            # Split response
             y_train = rs_features.iloc[train_idx][[band + '-' + roi]].copy()
             y_val = rs_features.iloc[val_idx][[band + '-' + roi]].copy()
+
+            # Get age range for model
+            agemin = rs_covariates['agedays'].min()
+            agemax = rs_covariates['agedays'].max()
 
             # Drop agegrp as covariate
             X_train = X_train.drop(columns=['agegrp'])
             X_val = X_val.drop(columns=['agegrp'])
 
-            # Create temporary ROI directory
-            roidirname = os.path.join(data_dir,roi,f'LOOCV_{fold}')
-
-            recreate_folder(roidirname)
+            # Create ROI directory
+            roidirname = os.path.join(data_dir, roi, f'LOOCV_{fold}')
+            roi_data_dir = os.path.join(roidirname, roi)
+            recreate_folder(roi_data_dir)
 
             # Write response/covariate files
-            resp_tr_filepath = os.path.join(roidirname, 'resp_tr.txt')
-            resp_te_filepath = os.path.join(roidirname, 'resp_te.txt')
+            resp_tr_filepath = os.path.join(roi_data_dir, 'resp_tr.txt')
+            resp_te_filepath = os.path.join(roi_data_dir, 'resp_te.txt')
 
-            cov_tr_filepath = os.path.join(roidirname, 'cov_tr.txt')
-            cov_te_filepath = os.path.join(roidirname, 'cov_te.txt')
+            cov_tr_filepath = os.path.join(roi_data_dir, 'cov_tr.txt')
+            cov_te_filepath = os.path.join(roi_data_dir, 'cov_te.txt')
 
             y_train.to_csv(resp_tr_filepath,sep='\t',header=False,index=False)
             y_val.to_csv(resp_te_filepath,sep='\t',header=False, index=False)
@@ -62,13 +66,12 @@ def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, work
             X_val.to_csv(cov_te_filepath,sep='\t',header=False,index=False)
 
             # Create spline design matrices
+            create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
+            create_design_matrix_one_gender('test', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
 
-            create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, [roi], data_dir)
-            create_design_matrix_one_gender('test', agemin, agemax, spline_order, spline_knots, [roi], data_dir)
-
-            # Paths to spline design matrices
-            cov_file_tr = os.path.join(data_dir, roi, 'cov_bspline_tr.txt')
-            cov_file_te = os.path.join(data_dir, roi, 'cov_bspline_te.txt')
+            # Define paths to spline design matrices
+            cov_file_tr = os.path.join(roidirname, roi, 'cov_bspline_tr.txt')
+            cov_file_te = os.path.join(roidirname, roi, 'cov_bspline_te.txt')
 
             # Fit on train set and predict held-out subject
             yhat_te, s2_te, nm, Z_te, metrics_te = (
@@ -86,7 +89,6 @@ def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, work
         z_all = np.asarray(z_all)
 
         # Calculate performance across ALL held-out sujects
-
         EV = explained_variance_score(y_true_all, yhat_all)
 
         RMSE = np.sqrt(mean_squared_error(y_true_all, yhat_all))

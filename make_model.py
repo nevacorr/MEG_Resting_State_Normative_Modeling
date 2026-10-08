@@ -10,7 +10,7 @@ from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, move
 from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder, calc_model_slope
 from apply_normative_model_time2 import apply_normative_model_time2
 import time
-import json
+from evaluate_normative_model_loo import evaluate_normative_model_loo
 
 def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, test_set_array,
                show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, sex, bands, evaluate_model_fit):
@@ -102,6 +102,15 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
 
             #  this path is where ROI_models folders are located
             data_dir = '{}/{}/{}_{}/ROI_models/'.format(working_dir, dirdata, sex, band)
+
+            if evaluate_model_fit:
+                loo_metrics = evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, working_dir, data_dir,
+                                                           spline_order, spline_knots)
+                loo_metrics['split'] = split
+                loo_metrics['band'] = band
+
+                loo_metrics_file = os.path.join(working_dir, 'output_data', f'{sex}_{n_splits}_splits_BLR_LOO_metrics.csv')
+                loo_metrics.to_csv(loo_metrics_file, mode='a', index=False, header=not os.path.isfile(loo_metrics_file))
 
             # Create Design Matrix and add in spline basis and intercept for training and validation data
             create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, roi_ids, data_dir)
