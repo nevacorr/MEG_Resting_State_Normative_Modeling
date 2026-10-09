@@ -4,16 +4,16 @@ import shutil
 import numpy as np
 from numpy.core.defchararray import capitalize
 from pcntoolkit.normative import estimate, evaluate
-from helper_functions_MEG import create_design_matrix_one_gender, plot_data_with_spline_one_gender
-from helper_functions_MEG import create_dummy_design_matrix_one_gender
+from helper_functions_MEG import create_design_matrix, plot_data_with_spline
+from helper_functions_MEG import create_dummy_design_matrix
 from helper_functions_MEG import barplot_performance_values, plot_y_v_yhat, movefiles, plot_num_subjs
-from helper_functions_MEG import write_ages_to_file_by_gender, recreate_folder, calc_model_slope
+from helper_functions_MEG import write_ages_to_file, recreate_folder, calc_model_slope
 from apply_normative_model_time2 import apply_normative_model_time2
 import time
 from evaluate_normative_model_loo import evaluate_normative_model_loo
 
 def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, test_set_array,
-               show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, sex, bands, evaluate_model_fit):
+               show_nsubject_plots, working_dir, spline_order, spline_knots, show_plots, bands, evaluate_model_fit):
 
     dirdata = 'data'
     dirpredict = 'predict_files'
@@ -21,7 +21,6 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
     # Initialize dictionaries for storing Z scores and model slopes
     Z_time2 = {}
     Z2_all_splits_dict = {}
-    all_blr_site_metrics_dict = {}
     model_slope = pd.DataFrame()
     ymin = pd.DataFrame()
 
@@ -43,22 +42,22 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         rsd_v2.reset_index(drop=True, inplace=True)
 
         if show_nsubject_plots:
-            plot_num_subjs(sex, rsd_v1, f'{sex.capitalize()} Subjects by Age with Pre-COVID Data used to Train Model Split {split}\n '
+            plot_num_subjs(rsd_v1, f'Subjects by Age with Pre-COVID Data used to Train Model Split {split}\n '
                                     f'(Total N=' + str(rsd_v1.shape[0]) + ')', struct_var,'pre-covid_train', os.path.join(working_dir, dirdata))
 
         # separate the brain features (response variables) and predictors (age) in to separate dataframes
-        rs_covariates = rsd_v1[['agegrp', 'agedays']]
-        rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays']]
+        rs_covariates = rsd_v1[['agegrp', 'agedays', 'gender']]
+        rscols = [col for col in rsd_v1.columns if col not in ['subject', 'agegrp', 'agedays', 'gender']]
 
         # loop through all power bands separately
         for band in bands:
 
             # make directories to store band specific files in
-            recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}'))
-            recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}','plots'))
-            recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}', 'ROI_models'))
-            recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}', 'covariate_files'))
-            recreate_folder(os.path.join(working_dir, dirdata, f'{sex}_{band}', 'response_files'))
+            recreate_folder(os.path.join(working_dir, dirdata, f'{band}'))
+            recreate_folder(os.path.join(working_dir, dirdata, f'{band}','plots'))
+            recreate_folder(os.path.join(working_dir, dirdata, f'{band}', 'ROI_models'))
+            recreate_folder(os.path.join(working_dir, dirdata, f'{band}', 'covariate_files'))
+            recreate_folder(os.path.join(working_dir, dirdata, f'{band}', 'response_files'))
 
             rscols_band = [item for item in rscols if band in item]
             rs_features = rsd_v1.loc[:, rscols_band]
@@ -70,7 +69,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
             agemin = X_train['agedays'].min()
             agemax = X_train['agedays'].max()
 
-            write_ages_to_file_by_gender(agemin, agemax, working_dir, sex)
+            write_ages_to_file(agemin, agemax, working_dir)
 
             # drop the agegrp column from the train data set because we want to use agedays as a predictor
             X_train.drop(columns=['agegrp'], inplace=True)
@@ -89,7 +88,7 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 y_train.to_csv(f'{working_dir}/resp_tr.txt', sep='\t', header=False, index=False)
 
             for i in roi_ids:
-                roidirname = '{}/{}/{}_{}/ROI_models/{}'.format(working_dir, dirdata, sex, band, i)
+                roidirname = '{}/{}/{}/ROI_models/{}'.format(working_dir, dirdata, band, i)
                 recreate_folder(roidirname)
                 resp_tr_filename = "{}/resp_tr_{}.txt".format(working_dir, i)
                 resp_tr_filepath = roidirname + '/resp_tr.txt'
@@ -97,11 +96,11 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 cov_tr_filepath = roidirname + '/cov_tr.txt'
                 shutil.copyfile("{}/cov_tr.txt".format(working_dir), cov_tr_filepath)
 
-            movefiles("{}/resp_*.txt".format(working_dir), "{}/{}/{}_{}/response_files/".format(working_dir, dirdata, sex, band))
-            movefiles("{}/cov_tr.txt".format(working_dir), "{}/{}/{}_{}/covariate_files/".format(working_dir, dirdata, sex, band))
+            movefiles("{}/resp_*.txt".format(working_dir), "{}/{}/{}/response_files/".format(working_dir, dirdata, band))
+            movefiles("{}/cov_tr.txt".format(working_dir), "{}/{}/{}/covariate_files/".format(working_dir, dirdata, band))
 
             #  this path is where ROI_models folders are located
-            data_dir = '{}/{}/{}_{}/ROI_models/'.format(working_dir, dirdata, sex, band)
+            data_dir = '{}/{}/{}/ROI_models/'.format(working_dir, dirdata, band)
 
             if evaluate_model_fit:
                 loo_metrics = evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, data_dir,
@@ -109,11 +108,11 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                 loo_metrics['split'] = split
                 loo_metrics['band'] = band
 
-                loo_metrics_file = os.path.join(working_dir, 'output_data', f'{sex}_{n_splits}_splits_BLR_LOO_metrics.csv')
+                loo_metrics_file = os.path.join(working_dir, 'output_data', f'{n_splits}_splits_BLR_LOO_metrics.csv')
                 loo_metrics.to_csv(loo_metrics_file, mode='a', index=False, header=not os.path.isfile(loo_metrics_file))
 
             # Create Design Matrix and add in spline basis and intercept for training and validation data
-            create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, roi_ids, data_dir)
+            create_design_matrix('train', agemin, agemax, spline_order, spline_knots, roi_ids, data_dir)
 
             subjects_train = subjects_train.reshape(-1, 1)
 
@@ -148,18 +147,17 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
                                                                 savemodel=True, saveoutput=False, standardize=False)
 
                 # create dummy design matrices for training set for visualizing model
-                dummy_cov_file_path = create_dummy_design_matrix_one_gender(agemin, agemax, spline_order, spline_knots,
-                                                                            working_dir)
+                dummy_cov_file_path = create_dummy_design_matrix(agemin, agemax, spline_order, spline_knots, working_dir)
 
                 # calculate model slope
                 model_slope.loc[band, roi], ymin.loc[band, roi] = calc_model_slope(dummy_cov_file_path, nm)
 
                 # compute splines and superimpose on data for training set. Show on screen or save to file depending on show_plots value.
-                #plot_data_with_spline_one_gender(sex, 'Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
-                #                      model_dir, roi, show_plots, working_dir, dirdata)
+                plot_data_with_spline('Training Data', band, cov_file_tr, resp_file_tr, dummy_cov_file_path,
+                                     model_dir, roi, show_plots, working_dir, dirdata)
 
             Z_time2[band] = apply_normative_model_time2(struct_var, show_plots, show_nsubject_plots, spline_order, spline_knots,
-                                working_dir,rsd_v2, dirdata, dirpredict, sex, band, split)
+                                working_dir,rsd_v2, dirdata, dirpredict, band, split)
 
             Z_time2[band]['split'] = split
 
@@ -171,8 +169,8 @@ def make_model(rsd_v1_orig, rsd_v2_orig, struct_var, n_splits, train_set_array, 
         # Save model slopes and ymins to file
         model_slope['split'] = split
         ymin['split'] = split
-        slope_file_path = f'{working_dir}/output_data/{sex}_{n_splits}_splits_allsplits_slopes.csv'
-        ymin_file = f'{working_dir}/output_data/{sex}_{n_splits}_splits_ymin.csv'
+        slope_file_path = f'{working_dir}/output_data/{n_splits}_splits_allsplits_slopes.csv'
+        ymin_file = f'{working_dir}/output_data/{n_splits}_splits_ymin.csv'
         model_slope.to_csv(slope_file_path, mode='a', index=True, header = not os.path.isfile(slope_file_path))
         ymin.to_csv(ymin_file, mode='a', index=True, header = not os.path.isfile(ymin_file))
 

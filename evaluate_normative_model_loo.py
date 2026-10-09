@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import os
 import shutil
-from helper_functions_MEG import recreate_folder, create_dummy_design_matrix_one_gender, create_design_matrix_one_gender
+from helper_functions_MEG import recreate_folder, create_dummy_design_matrix, create_design_matrix
 from pcn_estimate_myedit_loo import estimate
 # from pcntoolkit.normative import estimate
 
@@ -66,8 +66,8 @@ def evaluate_normative_model_loo(rs_covariates, rs_features, band, roi_ids, data
             np.savetxt(cov_te_filepath, X_val.values.reshape(1, -1), delimiter='\t')
 
             # Create spline design matrices
-            create_design_matrix_one_gender('train', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
-            create_design_matrix_one_gender('test', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
+            create_design_matrix('train', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
+            create_design_matrix('test', agemin, agemax, spline_order, spline_knots, [roi], roidirname)
 
             # Define paths to spline design matrices
             cov_file_tr = os.path.join(roidirname, roi, 'cov_bspline_tr.txt')

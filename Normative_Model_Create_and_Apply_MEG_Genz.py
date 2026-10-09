@@ -10,7 +10,7 @@ from make_and_apply_normative_model import make_and_apply_normative_model
 from helper_functions_MEG import recreate_folder, copy_old_files_to_backup_folder
 
 struct_var = 'meg'
-n_splits = 1         # number of train/test splits
+n_splits = 20        # number of train/test splits
 show_plots = 0        #set to 1 to show training and test data spline fit plots.
 show_nsubject_plots = 0 #set to 1 to plot number of subjects used in analysis, for each age and gender
 spline_order = 1        # order of spline to use for models
@@ -40,18 +40,16 @@ if run_make_norm_model:
     recreate_folder(os.path.join(working_dir, 'predict_files'))
     recreate_folder(os.path.join(working_dir, 'output_data'))
 
-for gender in ['male', 'female']:
-
     if run_make_norm_model:
 
-        Z2_all_splits[gender] = make_and_apply_normative_model(gender, struct_var, show_plots, show_nsubject_plots, spline_order,
-                                             spline_knots, working_dir, ct_data_dir, MEG_resting_state_filename,
-                                             subjects_to_exclude, bands, n_splits, data_type, evaluate_model_fit)
+        Z2_all_splits= make_and_apply_normative_model(struct_var, show_plots, show_nsubject_plots, spline_order,
+                                         spline_knots, working_dir, ct_data_dir, MEG_resting_state_filename,
+                                         subjects_to_exclude, bands, n_splits, data_type, evaluate_model_fit)
 
     if not run_make_norm_model and not evaluate_model_fit:
 
-        with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{gender}_{n_splits}_splits.pkl'), 'rb') as f:
-            Z2_all_splits[gender] = pickle.load(f)
+        with open(os.path.join(working_dir, f'Zscores_post_covid_test_all_bands_{n_splits}_splits.pkl'), 'rb') as f:
+            Z2_all_splits = pickle.load(f)
 
 if plot_z_distributions and not evaluate_model_fit:
 

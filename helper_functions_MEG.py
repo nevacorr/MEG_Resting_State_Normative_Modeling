@@ -22,7 +22,24 @@ def write_list_to_file(mylist, filepath):
         for item in mylist:
             file.write(item + "\n")
 
-def plot_num_subjs(gender, df, title, struct_var, timept, path):
+def plot_num_subjs(df, title, struct_var, timept, path):
+    sns.set_style(style='white')
+    g = sns.catplot(x="age", hue="sex", data=df, kind="count", legend=False, palette=sns.color_palette(['green', 'blue']))
+    g.fig.suptitle(title, fontsize=20)
+    g.fig.subplots_adjust(top=0.85) # adjust the Figure
+    g.ax.set_xlabel("Age", fontsize=18)
+    g.ax.set_ylabel("Number of Subjects", fontsize=18)
+    g.ax.tick_params(axis='x', labelsize=16)
+    g.ax.tick_params(axis='y', labelsize=16)
+    hue_labels = ['female', 'male']
+    g.add_legend(legend_data={
+        key: value for key, value in zip(hue_labels, g._legend_data.values())
+        }, fontsize=18)
+    g.ax.set(yticks=np.arange(0,20,2))
+    plt.show(block=False)
+    plt.savefig('{}/data/{}/plots/NumSubjects_{}'.format(path, struct_var, timept))
+
+def plot_num_subjs_one_gender(gender, df, title, struct_var, timept, path):
     sns.set(font_scale=1)
     sns.set_style(style="white")
     if gender == 'female':
@@ -46,6 +63,126 @@ def movefiles(pattern, folder):
         file_name = os.path.basename(file)
         shutil.move(file, folder + file_name)
         print("moved:", file)
+
+def create_design_matrix(datatype, agemin, agemax, spline_order, spline_knots, roi_ids, data_dir):
+    B = create_bspline_basis(agemin, agemax, p=spline_order, nknots=spline_knots)
+    for roi in roi_ids:
+        print('Creating basis expansion for ROI:', roi)
+        roi_dir = os.path.join(data_dir, roi)
+        os.chdir(roi_dir)
+        # create output dir
+        os.makedirs(os.path.join(roi_dir, 'blr'), exist_ok=True)
+
+        # load train & test covariate data matrices
+        if datatype == 'train':
+            X = np.loadtxt(os.path.join(roi_dir, 'cov_tr.txt'))
+        elif datatype == 'test':
+            X = np.atleast_2d(np.loadtxt(os.path.join(roi_dir, 'cov_te.txt')))
+
+        # add intercept column
+        X = np.concatenate((X, np.ones((X.shape[0], 1))), axis=1)
+
+        if datatype == 'train':
+            np.savetxt(os.path.join(roi_dir, 'cov_int_tr.txt'), X)
+        elif datatype == 'test':
+            np.savetxt(os.path.join(roi_dir, 'cov_int_te.txt'), X)
+
+        # create Bspline basis set
+        # This creates a numpy array called Phi by applying function B to each element of the first column of X_tr
+        Phi = np.array([B(i) for i in X[:, 0]])
+        X = np.concatenate((X, Phi), axis=1)
+        if datatype == 'train':
+            np.savetxt(os.path.join(roi_dir, 'cov_bspline_tr.txt'), X)
+        elif datatype == 'test':
+            np.savetxt(os.path.join(roi_dir, 'cov_bspline_te.txt'), X)
+
+#this function creates a dummy design matrix for plotting of spline function
+def create_dummy_design_matrix(agemin, agemax, cov_file, spline_order, spline_knots, path):
+    # load predictor variables for region
+    X = np.loadtxt(cov_file)
+
+    # make dummy test data covariate file starting with a column for age
+    dummy_cov = np.linspace(agemin, agemax, num=1000)
+    ones = np.ones((dummy_cov.shape[0], 1))
+
+    # add a column for gender for male and female data
+    dummy_cov_female = np.concatenate((dummy_cov.reshape(-1, 1), ones * 0), axis=1)
+    dummy_cov_male = np.concatenate((dummy_cov.reshape(-1, 1), ones), axis=1)
+
+    #add a column for intercept
+    dummy_cov_female = np.concatenate((dummy_cov_female, ones), axis=1)
+    dummy_cov_male = np.concatenate((dummy_cov_male, ones), axis=1)
+
+    # create spline features and add them to male and female predictor dataframes
+    BAll = create_bspline_basis(agemin, agemax, p=spline_order, nknots=spline_knots)
+    Phidummy_f = np.array([BAll(i) for i in dummy_cov_female[:, 0]])
+    Phidummy_m = np.array([BAll(i) for i in dummy_cov_male[:, 0]])
+    dummy_cov_female = np.concatenate((dummy_cov_female, Phidummy_f), axis=1)
+    dummy_cov_male = np.concatenate((dummy_cov_male, Phidummy_m), axis=1)
+
+    # write these new created predictor variables with spline and response variable to file
+    dummy_cov_file_path_female = os.path.join(path, 'cov_file_dummy_female.txt')
+    np.savetxt(dummy_cov_file_path_female, dummy_cov_female)
+    dummy_cov_file_path_male = os.path.join(path, 'cov_file_dummy_male.txt')
+    np.savetxt(dummy_cov_file_path_male, dummy_cov_male)
+    return dummy_cov_file_path_female, dummy_cov_file_path_male
+
+
+# this function plots data with spline model superimposed, for both male and females
+def plot_data_with_spline(datastr, struct_var, cov_file, resp_file, dummy_cov_file_path_female,
+                              dummy_cov_file_path_male, model_dir, roi, showplots, working_dir):
+
+    output_f = predict(dummy_cov_file_path_female, respfile=None, alg='blr', model_path=model_dir)
+
+    output_m = predict(dummy_cov_file_path_male, respfile=None, alg='blr', model_path=model_dir)
+
+    yhat_predict_dummy_m=output_m[0]
+    yhat_predict_dummy_f=output_f[0]
+
+    # load real data predictor variables for region
+    X = np.loadtxt(cov_file)
+    # load real data response variables for region
+    y = np.loadtxt(resp_file)
+
+    # create dataframes for plotting with seaborn facetgrid objects
+    dummy_cov_female = np.loadtxt(dummy_cov_file_path_female)
+    dummy_cov_male = np.loadtxt(dummy_cov_file_path_male)
+    df_origdata = pd.DataFrame(data=X[:, 0:2], columns=['Age in Days', 'gender'])
+    df_origdata[struct_var] = y.tolist()
+    df_origdata['Age in Days'] = df_origdata['Age in Days'] / 365.25
+    df_estspline = pd.DataFrame(data=dummy_cov_female[:, 0].tolist() + dummy_cov_male[:, 0].tolist(),
+                                columns=['Age in Days'])
+    df_estspline['Age in Days'] = df_estspline['Age in Days'] / 365.25
+    df_estspline['gender'] = [0] * 1000 + [1] * 1000
+    df_estspline['gender'] = df_estspline['gender'].astype('float')
+    tmp = np.array(yhat_predict_dummy_f.tolist() + yhat_predict_dummy_m.tolist(), dtype=float)
+    df_estspline[struct_var] = tmp
+    df_estspline = df_estspline.drop(index=df_estspline.iloc[999].name).reset_index(drop=True)
+    df_estspline = df_estspline.drop(index=df_estspline.iloc[1998].name)
+
+    fig=plt.figure()
+    colors = {1: 'blue', 0: 'crimson'}
+    sns.lineplot(data=df_estspline, x='Age in Days', y=struct_var, hue='gender', palette=colors, legend=False)
+    sns.scatterplot(data=df_origdata, x='Age in Days', y=struct_var, hue='gender', palette=colors)
+    plt.legend(title='')
+    ax = plt.gca()
+    fig.subplots_adjust(right=0.82)
+    handles, labels = ax.get_legend_handles_labels()
+    labels = ["female", "male"]
+    ax.legend(handles, labels, loc='upper left', bbox_to_anchor=(1, 1))
+
+    plt.title(datastr +' ' + struct_var +  ' vs. Age\n' + roi.replace(struct_var+'-', ''))
+    plt.xlabel('Age')
+    plt.ylabel(datastr + struct_var)
+    if showplots == 1:
+        if datastr == 'Training Data':
+            plt.show(block=False)
+        else:
+            plt.show()
+    else:
+        plt.savefig('{}/data/{}/plots/{}_vs_age_withsplinefit_{}_{}'
+                .format(working_dir, struct_var, struct_var, roi.replace(struct_var+'-', ''), datastr))
+        plt.close(fig)
 
 
 def create_design_matrix_one_gender(datatype, agemin, agemax, spline_order, spline_knots, roi_ids, data_dir):
@@ -177,14 +314,14 @@ def barplot_performance_values(struct_var, metric, df, spline_order, spline_knot
     plt.savefig("{}/data/{}/plots/Test_Set_{}_for_all_regions_splineorder{}, splineknots{}.png".format(outputdir, struct_var, metric, spline_order, spline_knots))
 
 
-def write_ages_to_file_by_gender(agemin, agemax,outputdir, gender):
-    with open("{}/agemin_agemax_Xtrain_{}.txt".format(outputdir, gender), "w") as file:
+def write_ages_to_file(agemin, agemax,outputdir):
+    with open("{}/agemin_agemax_Xtrain.txt".format(outputdir), "w") as file:
         file.write(str(agemin) + "\n")
         file.write(str(agemax) + "\n")
 
 
-def read_ages_from_file(struct_var, outputdir, gender):
-    with open("{}/agemin_agemax_Xtrain_{}.txt".format(outputdir,gender), "r") as file:
+def read_ages_from_file(struct_var, outputdir):
+    with open("{}/agemin_agemax_Xtrain.txt".format(outputdir), "r") as file:
         lines = file.readlines()
     agemin = float(lines[0].strip())
     agemax = float(lines[1].strip())
